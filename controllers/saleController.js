@@ -4,9 +4,13 @@ const Product = require('../models/Product');
 
 exports.createSale = async (req, res) => {
   try {
-    const { items } = req.body; // items: [{ productId, quantity, variant (opcional) }]
+    const { items, paymentAmount } = req.body; // items: [{ productId, quantity, variant (opcional) }], paymentAmount: monto con el que paga el cliente
     if(!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ msg: 'Debe enviar al menos un producto' });
+    }
+    
+    if(!paymentAmount || paymentAmount <= 0) {
+      return res.status(400).json({ msg: 'Debe enviar un monto de pago válido' });
     }
 
     let totalAmount = 0;
@@ -54,10 +58,20 @@ exports.createSale = async (req, res) => {
       });
     }
 
+    // Verificar que el pago sea suficiente
+    if(paymentAmount < totalAmount) {
+      return res.status(400).json({ msg: 'El monto de pago es insuficiente para cubrir el total de la venta' });
+    }
+    
+    // Calcular el cambio
+    const changeAmount = paymentAmount - totalAmount;
+
     const sale = new Sale({
       user: req.user.id,
       items: saleItems,
       totalAmount,
+      paymentAmount,
+      changeAmount,
       saleDate: new Date()
     });
 

@@ -12,6 +12,8 @@ const saleSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: [saleItemSchema],
   totalAmount: { type: Number, required: true },
+  paymentAmount: { type: Number, required: true },
+  changeAmount: { type: Number, required: true },
   saleDate: { type: Date, default: Date.now }
 }, { timestamps: true });
 
