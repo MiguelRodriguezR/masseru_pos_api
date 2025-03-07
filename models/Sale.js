@@ -14,6 +14,7 @@ const saleSchema = new mongoose.Schema({
   totalAmount: { type: Number, required: true },
   paymentAmount: { type: Number, required: true },
   changeAmount: { type: Number, required: true },
+  paymentMethod: { type: String, enum: ['cash', 'credit_card'], required: true },
   saleDate: { type: Date, default: Date.now }
 }, { timestamps: true });
 

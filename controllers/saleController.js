@@ -4,13 +4,17 @@ const Product = require('../models/Product');
 
 exports.createSale = async (req, res) => {
   try {
-    const { items, paymentAmount } = req.body; // items: [{ productId, quantity, variant (opcional) }], paymentAmount: monto con el que paga el cliente
+    const { items, paymentAmount, paymentMethod } = req.body; // items: [{ productId, quantity, variant (opcional) }], paymentAmount: monto con el que paga el cliente, paymentMethod: método de pago (cash o credit_card)
     if(!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ msg: 'Debe enviar al menos un producto' });
     }
     
     if(!paymentAmount || paymentAmount <= 0) {
       return res.status(400).json({ msg: 'Debe enviar un monto de pago válido' });
+    }
+    
+    if(!paymentMethod || !['cash', 'credit_card'].includes(paymentMethod)) {
+      return res.status(400).json({ msg: 'Debe enviar un método de pago válido (cash o credit_card)' });
     }
 
     let totalAmount = 0;
@@ -72,6 +76,7 @@ exports.createSale = async (req, res) => {
       totalAmount,
       paymentAmount,
       changeAmount,
+      paymentMethod,
       saleDate: new Date()
     });
 
