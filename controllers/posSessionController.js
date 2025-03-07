@@ -115,6 +115,37 @@ exports.closeSession = async (req, res) => {
   }
 };
 
+// Get the currently open session for a specific user
+exports.getUserOpenSession = async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    
+    if (!userId) {
+      return res.status(400).json({ msg: 'ID de usuario requerido' });
+    }
+    
+    const openSession = await PosSession.findOne({ 
+      user: userId, 
+      status: 'open' 
+    }).populate('user', 'name email');
+    
+    if (!openSession) {
+      return res.status(404).json({ 
+        msg: 'No hay sesión abierta para este usuario',
+        hasOpenSession: false
+      });
+    }
+    
+    res.json({
+      hasOpenSession: true,
+      session: openSession
+    });
+  } catch (error) {
+    console.error('Error al obtener sesión abierta del usuario:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 // Get all POS sessions
 exports.getSessions = async (req, res) => {
   try {

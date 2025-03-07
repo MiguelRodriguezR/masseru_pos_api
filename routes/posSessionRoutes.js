@@ -8,7 +8,8 @@ const {
   closeSession, 
   getSessions, 
   getSessionById, 
-  updateSession 
+  updateSession,
+  getUserOpenSession
 } = require('../controllers/posSessionController');
 
 // Apply authentication middleware to all routes
@@ -16,6 +17,9 @@ router.use(auth);
 
 // GET all POS sessions
 router.get('/', getSessions);
+
+// GET the currently open session for a specific user
+router.get('/user/:userId/open', getUserOpenSession);
 
 // GET a specific POS session by ID
 router.get('/:id', getSessionById);
