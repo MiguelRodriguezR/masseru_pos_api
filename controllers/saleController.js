@@ -1,6 +1,7 @@
 // controllers/saleController.js
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
+const { addSaleToSession } = require('./posSessionController');
 
 exports.createSale = async (req, res) => {
   try {
@@ -81,7 +82,15 @@ exports.createSale = async (req, res) => {
     });
 
     await sale.save();
-    res.status(201).json({ msg: 'Venta creada', sale });
+    
+    // Add the sale to the current open POS session
+    const addedToSession = await addSaleToSession(sale._id, req.user.id);
+    
+    res.status(201).json({ 
+      msg: 'Venta creada', 
+      sale,
+      addedToSession
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
