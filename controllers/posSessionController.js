@@ -194,11 +194,11 @@ exports.updateSession = async (req, res) => {
       return res.status(404).json({ msg: 'Sesión no encontrada' });
     }
     
-    if (session.user.toString() !== req.user.id) {
-      return res.status(403).json({ 
-        msg: 'No tienes permiso para actualizar esta sesión' 
-      });
-    }
+    // if (session.user.toString() !== req.user.id) {
+    //   return res.status(403).json({ 
+    //     msg: 'No tienes permiso para actualizar esta sesión' 
+    //   });
+    // }
     
     if (session.status === 'closed') {
       return res.status(400).json({ 

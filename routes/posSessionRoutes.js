@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
+const role = require('../middlewares/roleMiddleware');
 const validate = require('../middlewares/validationMiddleware');
 const { 
   openSession, 
@@ -16,7 +17,7 @@ const {
 router.use(auth);
 
 // GET all POS sessions
-router.get('/', getSessions);
+router.get('/', role('admin'), getSessions);
 
 // GET the currently open session for a specific user
 router.get('/user/:userId/open', getUserOpenSession);
@@ -31,6 +32,6 @@ router.post('/open', validate(['initialCash']), openSession);
 router.post('/close', validate(['sessionId', 'actualCash']), closeSession);
 
 // PUT - Update a POS session
-router.put('/:id', updateSession);
+router.put('/:id', role('admin'), updateSession);
 
 module.exports = router;

@@ -555,3 +555,281 @@
 ```
 - `500`: Error en el servidor.
 
+---
+
+## 6. Servicios de Sesiones POS
+
+### 6.1 Obtener Todas las Sesiones POS
+**Método:** `GET`  
+**Ruta:** `/api/pos-sessions`  
+**Descripción:** Obtiene una lista de todas las sesiones POS.  
+
+**Respuesta:**
+- `200`: Lista de sesiones POS.
+```json
+[
+  {
+    "_id": "sessionId",
+    "user": {
+      "_id": "userId",
+      "name": "Nombre Usuario",
+      "email": "usuario@ejemplo.com"
+    },
+    "openingDate": "2025-03-07T08:00:00.000Z",
+    "closingDate": "2025-03-07T18:00:00.000Z",
+    "initialCash": 100000,
+    "sales": ["saleId1", "saleId2", ...],
+    "cashSalesTotal": 250000,
+    "cardSalesTotal": 150000,
+    "totalSales": 400000,
+    "expectedCash": 350000,
+    "actualCash": 348000,
+    "cashDifference": -2000,
+    "notes": "Faltante de caja",
+    "status": "closed",
+    "createdAt": "2025-03-07T08:00:00.000Z",
+    "updatedAt": "2025-03-07T18:00:00.000Z"
+  },
+  ...
+]
+```
+- `500`: Error en el servidor.
+
+---
+
+### 6.2 Obtener Sesión POS por ID
+**Método:** `GET`  
+**Ruta:** `/api/pos-sessions/:id`  
+**Descripción:** Obtiene una sesión POS específica por su ID.  
+
+**Parámetros:**
+- `id`: ID de la sesión POS (String).
+
+**Respuesta:**
+- `200`: Sesión POS encontrada.
+```json
+{
+  "_id": "sessionId",
+  "user": {
+    "_id": "userId",
+    "name": "Nombre Usuario",
+    "email": "usuario@ejemplo.com"
+  },
+  "openingDate": "2025-03-07T08:00:00.000Z",
+  "closingDate": "2025-03-07T18:00:00.000Z",
+  "initialCash": 100000,
+  "sales": [
+    {
+      "_id": "saleId1",
+      "items": [
+        {
+          "product": {
+            "_id": "productId",
+            "name": "Producto Ejemplo",
+            "salePrice": 5000
+          },
+          "quantity": 2,
+          "variant": {
+            "color": "Rojo",
+            "size": "M"
+          },
+          "salePrice": 5000
+        }
+      ],
+      "totalAmount": 10000,
+      "paymentMethod": "cash",
+      "saleDate": "2025-03-07T10:30:00.000Z"
+    },
+    ...
+  ],
+  "cashSalesTotal": 250000,
+  "cardSalesTotal": 150000,
+  "totalSales": 400000,
+  "expectedCash": 350000,
+  "actualCash": 348000,
+  "cashDifference": -2000,
+  "notes": "Faltante de caja",
+  "status": "closed",
+  "createdAt": "2025-03-07T08:00:00.000Z",
+  "updatedAt": "2025-03-07T18:00:00.000Z"
+}
+```
+- `404`: Sesión POS no encontrada.
+- `500`: Error en el servidor.
+
+---
+
+### 6.3 Obtener Sesión Abierta de un Usuario
+**Método:** `GET`  
+**Ruta:** `/api/pos-sessions/user/:userId/open`  
+**Descripción:** Obtiene la sesión POS abierta de un usuario específico.  
+
+**Parámetros:**
+- `userId`: ID del usuario (String).
+
+**Respuesta:**
+- `200`: Sesión abierta encontrada.
+```json
+{
+  "hasOpenSession": true,
+  "session": {
+    "_id": "sessionId",
+    "user": {
+      "_id": "userId",
+      "name": "Nombre Usuario",
+      "email": "usuario@ejemplo.com"
+    },
+    "openingDate": "2025-03-07T08:00:00.000Z",
+    "initialCash": 100000,
+    "sales": ["saleId1", "saleId2", ...],
+    "cashSalesTotal": 150000,
+    "cardSalesTotal": 75000,
+    "totalSales": 225000,
+    "expectedCash": 250000,
+    "status": "open",
+    "createdAt": "2025-03-07T08:00:00.000Z",
+    "updatedAt": "2025-03-07T15:30:00.000Z"
+  }
+}
+```
+- `404`: No hay sesión abierta para el usuario.
+```json
+{
+  "msg": "No hay sesión abierta para este usuario",
+  "hasOpenSession": false
+}
+```
+- `500`: Error en el servidor.
+
+---
+
+### 6.4 Abrir Sesión POS (Abrir Caja)
+**Método:** `POST`  
+**Ruta:** `/api/pos-sessions/open`  
+**Descripción:** Abre una nueva sesión POS (caja).  
+**Parámetros:**
+- `initialCash`: Monto inicial de efectivo en caja (Number).
+
+**Ejemplo de Body:**
+```json
+{
+  "initialCash": 100000
+}
+```
+
+**Respuesta:**
+- `201`: Sesión POS abierta exitosamente.
+```json
+{
+  "msg": "Sesión de caja abierta correctamente",
+  "session": {
+    "_id": "sessionId",
+    "user": "userId",
+    "openingDate": "2025-03-07T08:00:00.000Z",
+    "initialCash": 100000,
+    "sales": [],
+    "cashSalesTotal": 0,
+    "cardSalesTotal": 0,
+    "totalSales": 0,
+    "expectedCash": 100000,
+    "status": "open",
+    "createdAt": "2025-03-07T08:00:00.000Z",
+    "updatedAt": "2025-03-07T08:00:00.000Z"
+  }
+}
+```
+- `400`: Error en la solicitud (por ejemplo, ya existe una sesión abierta).
+- `500`: Error en el servidor.
+
+---
+
+### 6.5 Cerrar Sesión POS (Cerrar Caja)
+**Método:** `POST`  
+**Ruta:** `/api/pos-sessions/close`  
+**Descripción:** Cierra una sesión POS (caja) existente.  
+**Parámetros:**
+- `sessionId`: ID de la sesión a cerrar (String).
+- `actualCash`: Monto real de efectivo en caja al cierre (Number).
+- `notes`: Observaciones del cierre (String, opcional).
+
+**Ejemplo de Body:**
+```json
+{
+  "sessionId": "sessionId",
+  "actualCash": 348000,
+  "notes": "Faltante de caja de 2000"
+}
+```
+
+**Respuesta:**
+- `200`: Sesión POS cerrada exitosamente.
+```json
+{
+  "msg": "Sesión de caja cerrada correctamente",
+  "session": {
+    "_id": "sessionId",
+    "user": "userId",
+    "openingDate": "2025-03-07T08:00:00.000Z",
+    "closingDate": "2025-03-07T18:00:00.000Z",
+    "initialCash": 100000,
+    "sales": ["saleId1", "saleId2", ...],
+    "cashSalesTotal": 250000,
+    "cardSalesTotal": 150000,
+    "totalSales": 400000,
+    "expectedCash": 350000,
+    "actualCash": 348000,
+    "cashDifference": -2000,
+    "notes": "Faltante de caja de 2000",
+    "status": "closed",
+    "createdAt": "2025-03-07T08:00:00.000Z",
+    "updatedAt": "2025-03-07T18:00:00.000Z"
+  }
+}
+```
+- `400`: Error en la solicitud (por ejemplo, sesión ya cerrada).
+- `404`: Sesión no encontrada.
+- `500`: Error en el servidor.
+
+---
+
+### 6.6 Actualizar Sesión POS
+**Método:** `PUT`  
+**Ruta:** `/api/pos-sessions/:id`  
+**Descripción:** Actualiza una sesión POS existente.  
+
+**Parámetros:**
+- `id`: ID de la sesión POS (String).
+- `notes`: Observaciones (String).
+
+**Ejemplo de Body:**
+```json
+{
+  "notes": "Observaciones actualizadas"
+}
+```
+
+**Respuesta:**
+- `200`: Sesión POS actualizada.
+```json
+{
+  "msg": "Sesión actualizada correctamente",
+  "session": {
+    "_id": "sessionId",
+    "user": "userId",
+    "openingDate": "2025-03-07T08:00:00.000Z",
+    "initialCash": 100000,
+    "sales": ["saleId1", "saleId2", ...],
+    "cashSalesTotal": 150000,
+    "cardSalesTotal": 75000,
+    "totalSales": 225000,
+    "expectedCash": 250000,
+    "notes": "Observaciones actualizadas",
+    "status": "open",
+    "createdAt": "2025-03-07T08:00:00.000Z",
+    "updatedAt": "2025-03-07T15:45:00.000Z"
+  }
+}
+```
+- `400`: Error en la solicitud (por ejemplo, intentar actualizar una sesión cerrada).
+- `404`: Sesión POS no encontrada.
+- `500`: Error en el servidor.
