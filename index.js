@@ -19,7 +19,9 @@ connectDB();
 
 // Middlewares
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use('/uploads', express.static('uploads')); // Servir archivos estáticos desde la carpeta uploads
 
 // Rutas
 app.use('/api/auth', authRoutes);

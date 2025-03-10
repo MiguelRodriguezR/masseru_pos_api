@@ -1,32 +1,69 @@
 // controllers/productController.js
 const Product = require('../models/Product');
+const fs = require('fs');
+const path = require('path');
 
 exports.createProduct = async (req, res) => {
   try {
-    const {
-      salePrice,
-      purchaseCost,
-      barcode,
-      name,
-      description,
-      images,
-      quantity,
-      variants
-    } = req.body;
+    let productData;
+    
+    // Verificar si los datos vienen como JSON en un campo 'product'
+    if (req.body.product) {
+      try {
+        productData = JSON.parse(req.body.product);
+      } catch (e) {
+        return res.status(400).json({ error: 'Formato de datos inválido' });
+      }
+    } else {
+      // Si no viene en formato JSON, usar los campos directos del body
+      const {
+        salePrice,
+        purchaseCost,
+        barcode,
+        name,
+        description,
+        quantity,
+        variants
+      } = req.body;
+      
+      productData = {
+        salePrice,
+        purchaseCost,
+        barcode,
+        name,
+        description,
+        quantity,
+        variants
+      };
+    }
+    
+    // Procesar las imágenes subidas
+    const images = [];
+    if (req.files && req.files.length > 0) {
+      // Guardar las rutas de las imágenes
+      req.files.forEach(file => {
+        // Guardar la ruta relativa para acceder desde el frontend
+        images.push(`/uploads/products/${file.filename}`);
+      });
+    }
+    
     const product = new Product({
-      salePrice,
-      purchaseCost,
-      barcode,
-      name,
-      description,
+      ...productData,
       images,
-      quantity,
-      variants,
       createdBy: req.user.id
     });
+    
     await product.save();
     res.status(201).json({ msg: 'Producto creado', product });
   } catch (error) {
+    // Si hay un error, eliminar las imágenes subidas
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        fs.unlink(file.path, (err) => {
+          if (err) console.error('Error al eliminar archivo:', err);
+        });
+      });
+    }
     res.status(500).json({ error: error.message });
   }
 };
@@ -52,18 +89,94 @@ exports.getProductById = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if(!updatedProduct) return res.status(404).json({ msg: 'Producto no encontrado' });
+    const productId = req.params.id;
+    const product = await Product.findById(productId);
+    
+    if (!product) return res.status(404).json({ msg: 'Producto no encontrado' });
+    
+    // Verificar si los datos vienen como JSON en un campo 'product'
+    let updateData;
+    if (req.body.product) {
+      try {
+        updateData = JSON.parse(req.body.product);
+      } catch (e) {
+        return res.status(400).json({ error: 'Formato de datos inválido' });
+      }
+    } else {
+      // Si no viene en formato JSON, usar los campos directos del body
+      updateData = { ...req.body };
+    }
+    
+    // Procesar las imágenes subidas
+    if (req.files && req.files.length > 0) {
+      const newImages = [];
+      
+      // Guardar las rutas de las nuevas imágenes
+      req.files.forEach(file => {
+        newImages.push(`/uploads/products/${file.filename}`);
+      });
+      
+      // Si se envía el campo 'keepImages' como false, se reemplazan todas las imágenes
+      if (req.body.keepImages === 'false') {
+        // Eliminar las imágenes antiguas
+        if (product.images && product.images.length > 0) {
+          product.images.forEach(imagePath => {
+            // Obtener la ruta completa del archivo
+            const fullPath = path.join(__dirname, '..', imagePath.replace(/^\//, ''));
+            // Eliminar el archivo si existe
+            if (fs.existsSync(fullPath)) {
+              fs.unlinkSync(fullPath);
+            }
+          });
+        }
+        updateData.images = newImages;
+      } else {
+        // Añadir las nuevas imágenes a las existentes
+        updateData.images = [...(product.images || []), ...newImages];
+      }
+    }
+    
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      updateData,
+      { new: true }
+    );
+    
     res.json({ msg: 'Producto actualizado', product: updatedProduct });
   } catch (error) {
+    // Si hay un error, eliminar las imágenes subidas
+    if (req.files && req.files.length > 0) {
+      req.files.forEach(file => {
+        fs.unlink(file.path, (err) => {
+          if (err) console.error('Error al eliminar archivo:', err);
+        });
+      });
+    }
     res.status(500).json({ error: error.message });
   }
 };
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
-    if(!deletedProduct) return res.status(404).json({ msg: 'Producto no encontrado' });
+    const product = await Product.findById(req.params.id);
+    
+    if (!product) return res.status(404).json({ msg: 'Producto no encontrado' });
+    
+    // Eliminar las imágenes asociadas al producto
+    if (product.images && product.images.length > 0) {
+      product.images.forEach(imagePath => {
+        // Obtener la ruta completa del archivo
+        const fullPath = path.join(__dirname, '..', imagePath.replace(/^\//, ''));
+        // Eliminar el archivo si existe
+        if (fs.existsSync(fullPath)) {
+          fs.unlinkSync(fullPath);
+        }
+      });
+    }
+    
+    // Eliminar el producto de la base de datos
+    await Product.findByIdAndDelete(req.params.id);
+    
     res.json({ msg: 'Producto eliminado' });
   } catch (error) {
     res.status(500).json({ error: error.message });

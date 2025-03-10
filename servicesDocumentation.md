@@ -12,28 +12,20 @@
 - `barcode`: Código de barras del producto (String).
 - `name`: Nombre del producto (String).
 - `description`: Descripción del producto (String, opcional).
-- `images`: Imágenes del producto (Array de Strings).
+- `images`: Archivos de imagen del producto (Multipart/form-data, máximo 5 imágenes).
 - `quantity`: Cantidad del producto (Number).
 - `variants`: Variantes del producto (Array de objetos con `color`, `size`, y `quantity`).
 
-**Ejemplo de Body:**
-```json
-{
-  "salePrice": 100,
-  "purchaseCost": 70,
-  "barcode": "1234567890123",
-  "name": "Producto Ejemplo",
-  "description": "Descripción del producto",
-  "images": ["url1", "url2"],
-  "quantity": 50,
-  "variants": [
-    {
-      "color": "Rojo",
-      "size": "M",
-      "quantity": 10
-    }
-  ]
-}
+**Ejemplo de Body (form-data):**
+```
+salePrice: 100
+purchaseCost: 70
+barcode: 1234567890123
+name: Producto Ejemplo
+description: Descripción del producto
+quantity: 50
+variants: [{"color":"Rojo","size":"M","quantity":10}]
+images: [archivo1.jpg, archivo2.jpg]
 ```
 
 **Respuesta:**
@@ -47,7 +39,7 @@
     "barcode": "1234567890123",
     "name": "Producto Ejemplo",
     "description": "Descripción del producto",
-    "images": ["url1", "url2"],
+    "images": ["/uploads/products/1709123456789-123456789.jpg", "/uploads/products/1709123456790-987654321.jpg"],
     "quantity": 50,
     "variants": [...],
     "createdBy": "userId",
@@ -129,13 +121,15 @@
 
 **Parámetros:**
 - `id`: ID del producto (String).
+- `images`: Archivos de imagen del producto (Multipart/form-data, máximo 5 imágenes).
+- `keepImages`: Si es 'false', se reemplazarán todas las imágenes existentes. Si es 'true' o no se envía, se añadirán las nuevas imágenes a las existentes (String).
 
-**Ejemplo de Body:**
-```json
-{
-  "salePrice": 120,
-  "quantity": 60
-}
+**Ejemplo de Body (form-data):**
+```
+salePrice: 120
+quantity: 60
+keepImages: true
+images: [archivo3.jpg]
 ```
 
 **Respuesta:**
@@ -149,7 +143,11 @@
     "barcode": "1234567890123",
     "name": "Producto Ejemplo",
     "description": "Descripción del producto",
-    "images": ["url1", "url2"],
+    "images": [
+      "/uploads/products/1709123456789-123456789.jpg", 
+      "/uploads/products/1709123456790-987654321.jpg",
+      "/uploads/products/1709123456791-456789123.jpg"
+    ],
     "quantity": 60,
     "variants": [...],
     "createdBy": "userId",
