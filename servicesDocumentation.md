@@ -462,7 +462,9 @@
         "size": "M"
       }
     }
-  ]
+  ],
+  "paymentMethod": "cash",
+  "paymentAmount": 250
 }
 ```
 
@@ -475,7 +477,12 @@
     "user": "userId",
     "items": [...],
     "totalAmount": 200,
+    "paymentAmount": 250,
+    "changeAmount": 50,
+    "paymentMethod": "cash",
     "saleDate": "2025-02-19T09:49:20.000Z",
+    "createdAt": "2025-02-19T09:49:20.000Z",
+    "updatedAt": "2025-02-19T09:49:20.000Z",
     "_id": "saleId"
   }
 }
@@ -499,7 +506,12 @@
     "user": "userId",
     "items": [...],
     "totalAmount": 200,
+    "paymentAmount": 250,
+    "changeAmount": 50,
+    "paymentMethod": "cash",
     "saleDate": "2025-02-19T09:49:20.000Z",
+    "createdAt": "2025-02-19T09:49:20.000Z",
+    "updatedAt": "2025-02-19T09:49:20.000Z",
     "_id": "saleId"
   },
   ...
@@ -524,7 +536,12 @@
   "user": "userId",
   "items": [...],
   "totalAmount": 200,
+  "paymentAmount": 250,
+  "changeAmount": 50,
+  "paymentMethod": "cash",
   "saleDate": "2025-02-19T09:49:20.000Z",
+  "createdAt": "2025-02-19T09:49:20.000Z",
+  "updatedAt": "2025-02-19T09:49:20.000Z",
   "_id": "saleId"
 }
 ```
