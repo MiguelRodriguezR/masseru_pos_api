@@ -98,9 +98,26 @@ exports.createSale = async (req, res) => {
 
 exports.getSales = async (req, res) => {
   try {
-    const sales = await Sale.find()
+    const { startDate, endDate } = req.query;
+    let query = {};
+    
+    // Filtrar por rango de fechas si se proporcionan
+    if (startDate && endDate) {
+      query.saleDate = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    } else if (startDate) {
+      query.saleDate = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      query.saleDate = { $lte: new Date(endDate) };
+    }
+    
+    const sales = await Sale.find(query)
       .populate('user', 'name email')
-      .populate('items.product', 'name salePrice');
+      .populate('items.product', 'name salePrice imageUrl')
+      .sort({ saleDate: -1 }); // Ordenar por fecha de venta, más reciente primero
+    
     res.json(sales);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -111,8 +128,10 @@ exports.getSaleById = async (req, res) => {
   try {
     const sale = await Sale.findById(req.params.id)
       .populate('user', 'name email')
-      .populate('items.product', 'name salePrice');
+      .populate('items.product', 'name salePrice barcode description images');
+    
     if(!sale) return res.status(404).json({ msg: 'Venta no encontrada' });
+    
     res.json(sale);
   } catch (error) {
     res.status(500).json({ error: error.message });
