@@ -75,11 +75,28 @@ exports.getProducts = async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     
-    // Count total products for pagination metadata
-    const total = await Product.countDocuments();
+    // Search parameter
+    const search = req.query.search || '';
     
-    // Get products with pagination
-    const products = await Product.find()
+    // Build query
+    let query = {};
+    
+    // Add search filter if search term is provided
+    if (search) {
+      query = {
+        $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { barcode: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+    
+    // Count total products matching the query for pagination metadata
+    const total = await Product.countDocuments(query);
+    
+    // Get products with pagination and search filter
+    const products = await Product.find(query)
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
