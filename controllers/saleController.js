@@ -98,7 +98,13 @@ exports.createSale = async (req, res) => {
 
 exports.getSales = async (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
+    // Parámetros de paginación
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    // Parámetros de filtro
+    const { startDate, endDate, search, filterBy } = req.query;
     let query = {};
     
     // Filtrar por rango de fechas si se proporcionan
@@ -113,13 +119,138 @@ exports.getSales = async (req, res) => {
       query.saleDate = { $lte: new Date(endDate) };
     }
     
-    const sales = await Sale.find(query)
-      .populate('user', 'name email')
-      .populate('items.product', 'name salePrice imageUrl')
-      .sort({ saleDate: -1 }); // Ordenar por fecha de venta, más reciente primero
+    // Filtrar por búsqueda si se proporciona
+    if (search && filterBy) {
+      const filterOptions = Array.isArray(filterBy) ? filterBy : [filterBy];
+      
+      const searchConditions = [];
+      
+      if (filterOptions.includes('productName')) {
+        // Buscar por nombre de producto
+        searchConditions.push({
+          'items.product.name': { $regex: search, $options: 'i' }
+        });
+      }
+      
+      if (filterOptions.includes('productBarcode')) {
+        // Buscar por código de barras de producto
+        searchConditions.push({
+          'items.product.barcode': { $regex: search, $options: 'i' }
+        });
+      }
+      
+      if (filterOptions.includes('totalAmount')) {
+        // Buscar por monto total (si es un número válido)
+        const amount = parseFloat(search);
+        if (!isNaN(amount)) {
+          searchConditions.push({ totalAmount: amount });
+        }
+      }
+      
+      if (searchConditions.length > 0) {
+        query.$or = searchConditions;
+      }
+    }
     
-    res.json(sales);
+    // console.log('Query:', JSON.stringify(query, null, 2));
+    // console.log('Search:', search, 'FilterBy:', filterBy);
+    
+    // Primero, realizar una consulta para obtener todas las ventas que coinciden con los criterios
+    // para poder filtrar correctamente por nombre de producto o código de barras
+    let allMatchingSales = [];
+    
+    if (search && (filterBy && (
+        (Array.isArray(filterBy) && (filterBy.includes('productName') || filterBy.includes('productBarcode'))) ||
+        filterBy === 'productName' || 
+        filterBy === 'productBarcode'
+      ))) {
+      // Si estamos buscando por nombre de producto o código de barras, necesitamos
+      // primero obtener todas las ventas y luego filtrar manualmente
+      allMatchingSales = await Sale.find({})
+        .populate('user', 'name email')
+        .populate('items.product', 'name salePrice barcode images')
+        .sort({ saleDate: -1 });
+      
+      // Filtrar manualmente por nombre de producto o código de barras
+      allMatchingSales = allMatchingSales.filter(sale => {
+        return sale.items.some(item => {
+          const product = item.product;
+          if (!product) return false;
+          
+          const filterOptions = Array.isArray(filterBy) ? filterBy : [filterBy];
+          
+          if (filterOptions.includes('productName') && 
+              product.name && 
+              product.name.toLowerCase().includes(search.toLowerCase())) {
+            return true;
+          }
+          
+          if (filterOptions.includes('productBarcode') && 
+              product.barcode && 
+              product.barcode.toLowerCase().includes(search.toLowerCase())) {
+            return true;
+          }
+          
+          return false;
+        });
+      });
+      
+      // Aplicar filtros de fecha si existen
+      if (query.saleDate) {
+        allMatchingSales = allMatchingSales.filter(sale => {
+          const saleDate = new Date(sale.saleDate);
+          if (query.saleDate.$gte && query.saleDate.$lte) {
+            return saleDate >= query.saleDate.$gte && saleDate <= query.saleDate.$lte;
+          } else if (query.saleDate.$gte) {
+            return saleDate >= query.saleDate.$gte;
+          } else if (query.saleDate.$lte) {
+            return saleDate <= query.saleDate.$lte;
+          }
+          return true;
+        });
+      }
+      
+      // Aplicar paginación manualmente
+      const total = allMatchingSales.length;
+      const paginatedSales = allMatchingSales.slice(skip, skip + limit);
+      
+      return res.json({
+        sales: paginatedSales,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
+        }
+      });
+    } else {
+      // Si no estamos buscando por nombre de producto o código de barras,
+      // podemos usar la consulta normal de MongoDB
+      
+      // Contar el total de ventas que coinciden con la consulta para la paginación
+      const total = await Sale.countDocuments(query);
+      
+      // Obtener las ventas con paginación y filtros
+      const sales = await Sale.find(query)
+        .populate('user', 'name email')
+        .populate('items.product', 'name salePrice barcode images')
+        .sort({ saleDate: -1 }) // Ordenar por fecha de venta, más reciente primero
+        .skip(skip)
+        .limit(limit);
+      
+      // Devolver las ventas con metadatos de paginación
+      return res.json({
+        sales,
+        pagination: {
+          total,
+          page,
+          limit,
+          pages: Math.ceil(total / limit)
+        }
+      });
+    }
   } catch (error) {
+    console.error('Error in getSales:', error);
     res.status(500).json({ error: error.message });
   }
 };
