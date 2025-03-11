@@ -7,6 +7,9 @@ const { createProduct, getProducts, getProductById, updateProduct, deleteProduct
 const validate = require('../middlewares/validationMiddleware');
 const upload = require('../middlewares/uploadMiddleware');
 
+// Apply authentication middleware to all routes
+router.use(auth);
+
 router.get('/', getProducts);
 router.get('/:id', getProductById);
 
