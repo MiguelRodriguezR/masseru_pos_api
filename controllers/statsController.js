@@ -195,21 +195,53 @@ exports.getPosSessionStats = async (req, res) => {
     
     // Calculate session statistics
     const activeSessions = sessions.filter(session => session.status === 'open');
-    let totalCashSales = 0;
-    let totalCardSales = 0;
     
-    sessions.forEach(session => {
-      totalCashSales += session.cashSalesTotal;
-      totalCardSales += session.cardSalesTotal;
+    // Get all sales for the period to calculate payment method statistics
+    const saleFilter = {};
+    if(startDate || endDate) {
+      saleFilter.saleDate = {};
+      if(startDate) saleFilter.saleDate.$gte = new Date(startDate);
+      if(endDate) saleFilter.saleDate.$lte = new Date(endDate);
+    }
+    
+    const sales = await Sale.find(saleFilter).populate('paymentMethod');
+    
+    // Calculate sales by payment method
+    const paymentMethodStats = {};
+    let totalSalesAmount = 0;
+    
+    sales.forEach(sale => {
+      totalSalesAmount += sale.totalAmount;
+      
+      if (sale.paymentMethod) {
+        const methodId = sale.paymentMethod._id.toString();
+        
+        if (!paymentMethodStats[methodId]) {
+          paymentMethodStats[methodId] = {
+            _id: methodId,
+            name: sale.paymentMethod.name,
+            code: sale.paymentMethod.code,
+            color: sale.paymentMethod.color,
+            icon: sale.paymentMethod.icon,
+            totalAmount: 0,
+            count: 0
+          };
+        }
+        
+        paymentMethodStats[methodId].totalAmount += sale.totalAmount;
+        paymentMethodStats[methodId].count += 1;
+      }
     });
+    
+    // Convert to array for easier consumption by frontend
+    const paymentMethodsArray = Object.values(paymentMethodStats);
     
     res.json({
       sessions,
       totalSessions: sessions.length,
       activeSessions: activeSessions.length,
-      totalCashSales,
-      totalCardSales,
-      totalSales: totalCashSales + totalCardSales
+      totalSales: totalSalesAmount,
+      paymentMethods: paymentMethodsArray
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -393,20 +425,52 @@ async function getPosSessionStatsData(startDate, endDate) {
   const sessions = await PosSession.find(filter).populate('user', 'name');
   
   const activeSessions = sessions.filter(session => session.status === 'open');
-  let totalCashSales = 0;
-  let totalCardSales = 0;
   
-  sessions.forEach(session => {
-    totalCashSales += session.cashSalesTotal;
-    totalCardSales += session.cardSalesTotal;
+  // Get all sales for the period to calculate payment method statistics
+  const saleFilter = {};
+  if(startDate || endDate) {
+    saleFilter.saleDate = {};
+    if(startDate) saleFilter.saleDate.$gte = new Date(startDate);
+    if(endDate) saleFilter.saleDate.$lte = new Date(endDate);
+  }
+  
+  const sales = await Sale.find(saleFilter).populate('paymentMethod');
+  
+  // Calculate sales by payment method
+  const paymentMethodStats = {};
+  let totalSalesAmount = 0;
+  
+  sales.forEach(sale => {
+    totalSalesAmount += sale.totalAmount;
+    
+    if (sale.paymentMethod) {
+      const methodId = sale.paymentMethod._id.toString();
+      
+      if (!paymentMethodStats[methodId]) {
+        paymentMethodStats[methodId] = {
+          _id: methodId,
+          name: sale.paymentMethod.name,
+          code: sale.paymentMethod.code,
+          color: sale.paymentMethod.color,
+          icon: sale.paymentMethod.icon,
+          totalAmount: 0,
+          count: 0
+        };
+      }
+      
+      paymentMethodStats[methodId].totalAmount += sale.totalAmount;
+      paymentMethodStats[methodId].count += 1;
+    }
   });
+  
+  // Convert to array for easier consumption by frontend
+  const paymentMethodsArray = Object.values(paymentMethodStats);
   
   return {
     sessions,
     totalSessions: sessions.length,
     activeSessions: activeSessions.length,
-    totalCashSales,
-    totalCardSales,
-    totalSales: totalCashSales + totalCardSales
+    totalSales: totalSalesAmount,
+    paymentMethods: paymentMethodsArray
   };
 }
