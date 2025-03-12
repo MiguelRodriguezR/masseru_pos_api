@@ -14,7 +14,7 @@ exports.createSale = async (req, res) => {
       return res.status(400).json({ msg: 'Debe enviar un monto de pago válido' });
     }
     
-    if(!paymentMethod || !['cash', 'credit_card'].includes(paymentMethod)) {
+    if(!paymentMethod) {
       return res.status(400).json({ msg: 'Debe enviar un método de pago válido (cash o credit_card)' });
     }
 
@@ -169,6 +169,7 @@ exports.getSales = async (req, res) => {
       allMatchingSales = await Sale.find({})
         .populate('user', 'name email')
         .populate('items.product', 'name salePrice barcode images')
+        .populate('paymentMethod', 'name color icon')
         .sort({ saleDate: -1 });
       
       // Filtrar manualmente por nombre de producto o código de barras
@@ -234,6 +235,7 @@ exports.getSales = async (req, res) => {
       const sales = await Sale.find(query)
         .populate('user', 'name email')
         .populate('items.product', 'name salePrice barcode images')
+        .populate('paymentMethod', 'name color icon')
         .sort({ saleDate: -1 }) // Ordenar por fecha de venta, más reciente primero
         .skip(skip)
         .limit(limit);
@@ -259,7 +261,8 @@ exports.getSaleById = async (req, res) => {
   try {
     const sale = await Sale.findById(req.params.id)
       .populate('user', 'name email')
-      .populate('items.product', 'name salePrice barcode description images');
+      .populate('items.product', 'name salePrice barcode description images')
+      .populate('paymentMethod', 'name color icon');
     
     if(!sale) return res.status(404).json({ msg: 'Venta no encontrada' });
     

@@ -11,6 +11,7 @@ const saleRoutes = require('./routes/saleRoutes');
 const receiptRoutes = require('./routes/receiptRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const posSessionRoutes = require('./routes/posSessionRoutes');
+const paymentMethodRoutes = require('./routes/paymentMethodRoutes');
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use('/api/sales', saleRoutes);
 app.use('/api/receipts', receiptRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/pos-sessions', posSessionRoutes);
+app.use('/api/payment-methods', paymentMethodRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
