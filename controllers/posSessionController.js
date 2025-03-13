@@ -75,35 +75,64 @@ exports.closeSession = async (req, res) => {
     }
 
     // Calculate totals from all sales in this session
-    const sales = await Sale.find({ _id: { $in: session.sales } });
+    const sales = await Sale.find({ _id: { $in: session.sales } })
+      .populate('paymentMethod');
     
-    let cashSalesTotal = 0;
-    let cardSalesTotal = 0;
+    // Group sales by payment method and calculate totals
+    const paymentTotals = [];
+    let totalSales = 0;
+    let cashTotal = 0;
+    let nonCashTotal = 0;
     
+    // Process each sale
     sales.forEach(sale => {
-      if (sale.paymentMethod === 'cash') {
-        cashSalesTotal += sale.totalAmount;
-      } else if (sale.paymentMethod === 'credit_card') {
-        cardSalesTotal += sale.totalAmount;
+      totalSales += sale.totalAmount;
+      
+      // Find if this payment method is already in our totals
+      const paymentMethodId = sale.paymentMethod._id.toString();
+      let paymentTotal = paymentTotals.find(pt => 
+        pt.paymentMethod.toString() === paymentMethodId
+      );
+      
+      // If not found, create a new entry
+      if (!paymentTotal) {
+        paymentTotals.push({
+          paymentMethod: sale.paymentMethod._id,
+          total: sale.totalAmount
+        });
+      } else {
+        // Update existing total
+        paymentTotal.total += sale.totalAmount;
+      }
+      
+      // Check if this is a cash payment method (code CASH)
+      if (sale.paymentMethod.code === 'CASH') {
+        cashTotal += sale.totalAmount;
+      } else {
+        nonCashTotal += sale.totalAmount;
       }
     });
-
-    const totalSales = cashSalesTotal + cardSalesTotal;
-    const expectedCash = session.initialCash + cashSalesTotal;
+    
+    // Calculate expected cash and difference
+    const expectedCash = session.initialCash + cashTotal;
+    const expectedNonCash = nonCashTotal;
     const cashDifference = actualCash - expectedCash;
 
     // Update session with closing information
     session.closingDate = new Date();
-    session.cashSalesTotal = cashSalesTotal;
-    session.cardSalesTotal = cardSalesTotal;
+    session.paymentTotals = paymentTotals;
     session.totalSales = totalSales;
     session.expectedCash = expectedCash;
+    session.expectedNonCash = expectedNonCash;
     session.actualCash = actualCash;
     session.cashDifference = cashDifference;
     session.notes = notes || '';
     session.status = 'closed';
 
     await session.save();
+
+    // Populate payment methods for response
+    await session.populate('paymentTotals.paymentMethod');
 
     res.json({ 
       msg: 'Sesión de caja cerrada correctamente', 
@@ -127,7 +156,9 @@ exports.getUserOpenSession = async (req, res) => {
     const openSession = await PosSession.findOne({ 
       user: userId, 
       status: 'open' 
-    }).populate('user', 'name email');
+    })
+    .populate('user', 'name email')
+    .populate('paymentTotals.paymentMethod', 'name code color icon');
     
     if (!openSession) {
       return res.status(404).json({ 
@@ -146,31 +177,94 @@ exports.getUserOpenSession = async (req, res) => {
   }
 };
 
-// Get all POS sessions
+// Get all POS sessions with pagination and filtering
 exports.getSessions = async (req, res) => {
   try {
-    const sessions = await PosSession.find()
-      .populate('user', 'name email')
-      .sort({ createdAt: -1 });
+    // Pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
     
-    res.json(sessions);
+    // Filter parameters
+    const { startDate, endDate, search, status, userId } = req.query;
+    let query = {};
+    
+    // Filter by date range if provided
+    if (startDate && endDate) {
+      query.openingDate = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      };
+    } else if (startDate) {
+      query.openingDate = { $gte: new Date(startDate) };
+    } else if (endDate) {
+      query.openingDate = { $lte: new Date(endDate) };
+    }
+    
+    // Filter by status if provided
+    if (status && ['open', 'closed'].includes(status)) {
+      query.status = status;
+    }
+    
+    // Filter by user if provided
+    if (userId) {
+      query.user = userId;
+    }
+    
+    // Search by notes if provided
+    if (search) {
+      query.notes = { $regex: search, $options: 'i' };
+    }
+    
+    // Count total sessions matching the query for pagination
+    const total = await PosSession.countDocuments(query);
+    
+    // Get sessions with pagination and filters
+    const sessions = await PosSession.find(query)
+      .populate('user', 'name email')
+      .populate('paymentTotals.paymentMethod', 'name code color icon')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    
+    // Return sessions with pagination metadata
+    res.json({
+      sessions,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error al obtener sesiones:', error);
     res.status(500).json({ error: error.message });
   }
 };
 
-// Get a specific POS session by ID
+// Get a specific POS session by ID with detailed sales information
 exports.getSessionById = async (req, res) => {
   try {
     const session = await PosSession.findById(req.params.id)
       .populate('user', 'name email')
+      .populate('paymentTotals.paymentMethod', 'name code color icon')
       .populate({
         path: 'sales',
-        populate: {
-          path: 'items.product',
-          select: 'name salePrice'
-        }
+        populate: [
+          {
+            path: 'items.product',
+            select: 'name salePrice barcode images'
+          },
+          {
+            path: 'user',
+            select: 'name email'
+          },
+          {
+            path: 'paymentMethod',
+            select: 'name code color icon'
+          }
+        ]
       });
     
     if (!session) {
@@ -239,18 +333,52 @@ exports.addSaleToSession = async (saleId, userId) => {
     // Add the sale to the session
     openSession.sales.push(saleId);
     
-    // Get the sale details
-    const sale = await Sale.findById(saleId);
+    // Get the sale details with payment method
+    const sale = await Sale.findById(saleId).populate('paymentMethod');
     
-    // Update session totals
-    if (sale.paymentMethod === 'cash') {
-      openSession.cashSalesTotal += sale.totalAmount;
-    } else if (sale.paymentMethod === 'credit_card') {
-      openSession.cardSalesTotal += sale.totalAmount;
+    if (!sale) {
+      console.error('Venta no encontrada');
+      return false;
     }
     
-    openSession.totalSales = openSession.cashSalesTotal + openSession.cardSalesTotal;
-    openSession.expectedCash = openSession.initialCash + openSession.cashSalesTotal;
+    // Update payment totals
+    let paymentTotals = openSession.paymentTotals || [];
+    let totalSales = openSession.totalSales || 0;
+    let expectedCash = openSession.initialCash;
+    let expectedNonCash = openSession.expectedNonCash || 0;
+    
+    // Find if this payment method is already in our totals
+    const paymentMethodId = sale.paymentMethod._id.toString();
+    let paymentTotal = paymentTotals.find(pt => 
+      pt.paymentMethod && pt.paymentMethod.toString() === paymentMethodId
+    );
+    
+    // If not found, create a new entry
+    if (!paymentTotal) {
+      paymentTotals.push({
+        paymentMethod: sale.paymentMethod._id,
+        total: sale.totalAmount
+      });
+    } else {
+      // Update existing total
+      paymentTotal.total += sale.totalAmount;
+    }
+    
+    // Update total sales
+    totalSales += sale.totalAmount;
+    
+    // Update expected cash if this is a cash payment, otherwise update expected non-cash
+    if (sale.paymentMethod.code === 'CASH') {
+      expectedCash += sale.totalAmount;
+    } else {
+      expectedNonCash += sale.totalAmount;
+    }
+    
+    // Update session
+    openSession.paymentTotals = paymentTotals;
+    openSession.totalSales = totalSales;
+    openSession.expectedCash = expectedCash;
+    openSession.expectedNonCash = expectedNonCash;
     
     await openSession.save();
     return true;

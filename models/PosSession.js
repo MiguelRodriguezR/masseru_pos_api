@@ -1,6 +1,17 @@
 // models/PosSession.js
 const mongoose = require('mongoose');
 
+const paymentTotalSchema = new mongoose.Schema({
+  paymentMethod: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'PaymentMethod'
+  },
+  total: {
+    type: Number,
+    default: 0
+  }
+}, { _id: false });
+
 const posSessionSchema = new mongoose.Schema({
   user: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -24,19 +35,16 @@ const posSessionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Sale' 
   }],
-  cashSalesTotal: {
-    type: Number,
-    default: 0
-  },
-  cardSalesTotal: {
-    type: Number,
-    default: 0
-  },
+  paymentTotals: [paymentTotalSchema],
   totalSales: {
     type: Number,
     default: 0
   },
   expectedCash: {
+    type: Number,
+    default: 0
+  },
+  expectedNonCash: {
     type: Number,
     default: 0
   },
