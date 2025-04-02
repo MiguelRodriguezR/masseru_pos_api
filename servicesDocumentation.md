@@ -572,9 +572,234 @@ images: [archivo3.jpg]
 
 ---
 
-## 6. Servicios de Sesiones POS
+## 6. Servicios de Compras
 
-### 6.1 Obtener Todas las Sesiones POS
+### 6.1 Obtener Todas las Compras
+**Método:** `GET`  
+**Ruta:** `/api/purchases`  
+**Descripción:** Obtiene una lista paginada de todas las compras con capacidad de búsqueda.  
+**Parámetros (query):**
+- `page`: Número de página (Number, opcional, default: 1).
+- `limit`: Cantidad de resultados por página (Number, opcional, default: 10).
+- `search`: Término de búsqueda para filtrar por proveedor, número de factura o notas (String, opcional).
+
+**Respuesta:**
+- `200`: Lista de compras con metadatos de paginación.
+```json
+{
+  "purchases": [
+    {
+      "_id": "purchaseId",
+      "items": [
+        {
+          "product": {
+            "_id": "productId",
+            "name": "Producto Ejemplo",
+            "barcode": "1234567890123"
+          },
+          "quantity": 10,
+          "purchasePrice": 50
+        }
+      ],
+      "total": 500,
+      "supplier": "Proveedor Ejemplo",
+      "invoiceNumber": "FAC-001",
+      "notes": "Notas de ejemplo",
+      "createdBy": {
+        "_id": "userId",
+        "name": "Nombre Usuario"
+      },
+      "createdAt": "2025-02-19T09:49:20.000Z",
+      "updatedAt": "2025-02-19T09:49:20.000Z"
+    }
+  ],
+  "pagination": {
+    "total": 1,
+    "page": 1,
+    "limit": 10,
+    "pages": 1
+  }
+}
+```
+- `500`: Error en el servidor.
+
+---
+
+### 6.2 Obtener Compra por ID
+**Método:** `GET`  
+**Ruta:** `/api/purchases/:id`  
+**Descripción:** Obtiene una compra específica por su ID.  
+**Parámetros (path):**
+- `id`: ID de la compra (String).
+
+**Respuesta:**
+- `200`: Compra encontrada.
+```json
+{
+  "_id": "purchaseId",
+  "items": [
+    {
+      "product": {
+        "_id": "productId",
+        "name": "Producto Ejemplo",
+        "barcode": "1234567890123",
+        "salePrice": 100,
+        "purchaseCost": 50
+      },
+      "quantity": 10,
+      "purchasePrice": 50
+    }
+  ],
+  "total": 500,
+  "supplier": "Proveedor Ejemplo",
+  "invoiceNumber": "FAC-001",
+  "notes": "Notas de ejemplo",
+  "createdBy": {
+    "_id": "userId",
+    "name": "Nombre Usuario"
+  },
+  "createdAt": "2025-02-19T09:49:20.000Z",
+  "updatedAt": "2025-02-19T09:49:20.000Z"
+}
+```
+- `404`: Compra no encontrada.
+- `500`: Error en el servidor.
+
+---
+
+### 6.3 Crear Compra
+**Método:** `POST`  
+**Ruta:** `/api/purchases`  
+**Descripción:** Crea una nueva compra. Requiere rol de admin o editor.  
+**Parámetros (body):**
+- `items`: Lista de productos comprados (Array de objetos con `product`, `quantity` y `purchasePrice`).
+- `supplier`: Nombre del proveedor (String, opcional).
+- `invoiceNumber`: Número de factura (String, opcional).
+- `notes`: Notas adicionales (String, opcional).
+
+**Ejemplo de Body:**
+```json
+{
+  "items": [
+    {
+      "product": "productId",
+      "quantity": 10,
+      "purchasePrice": 50
+    }
+  ],
+  "supplier": "Proveedor Ejemplo",
+  "invoiceNumber": "FAC-001",
+  "notes": "Notas de ejemplo"
+}
+```
+
+**Respuesta:**
+- `201`: Compra creada exitosamente.
+```json
+{
+  "msg": "Compra creada",
+  "purchase": {
+    "_id": "purchaseId",
+    "items": [
+      {
+        "product": "productId",
+        "quantity": 10,
+        "purchasePrice": 50
+      }
+    ],
+    "total": 500,
+    "supplier": "Proveedor Ejemplo",
+    "invoiceNumber": "FAC-001",
+    "notes": "Notas de ejemplo",
+    "createdBy": "userId",
+    "createdAt": "2025-02-19T09:49:20.000Z",
+    "updatedAt": "2025-02-19T09:49:20.000Z"
+  }
+}
+```
+- `400`: Error en la solicitud (items inválidos o faltantes).
+- `500`: Error en el servidor.
+
+---
+
+### 6.4 Actualizar Compra
+**Método:** `PUT`  
+**Ruta:** `/api/purchases/:id`  
+**Descripción:** Actualiza una compra existente. Requiere rol de admin o editor.  
+**Parámetros:**
+- `id`: ID de la compra (String, path).
+- `items`: Lista actualizada de productos (Array de objetos con `product`, `quantity` y `purchasePrice`, body).
+- `supplier`: Nombre del proveedor (String, body, opcional).
+- `invoiceNumber`: Número de factura (String, body, opcional).
+- `notes`: Notas adicionales (String, body, opcional).
+
+**Ejemplo de Body:**
+```json
+{
+  "items": [
+    {
+      "product": "productId",
+      "quantity": 15,
+      "purchasePrice": 55
+    }
+  ],
+  "supplier": "Proveedor Actualizado",
+  "notes": "Notas actualizadas"
+}
+```
+
+**Respuesta:**
+- `200`: Compra actualizada.
+```json
+{
+  "msg": "Compra actualizada",
+  "purchase": {
+    "_id": "purchaseId",
+    "items": [
+      {
+        "product": "productId",
+        "quantity": 15,
+        "purchasePrice": 55
+      }
+    ],
+    "total": 825,
+    "supplier": "Proveedor Actualizado",
+    "invoiceNumber": "FAC-001",
+    "notes": "Notas actualizadas",
+    "createdBy": "userId",
+    "createdAt": "2025-02-19T09:49:20.000Z",
+    "updatedAt": "2025-02-19T10:00:00.000Z"
+  }
+}
+```
+- `400`: Error en la solicitud (items inválidos o faltantes).
+- `404`: Compra no encontrada.
+- `500`: Error en el servidor.
+
+---
+
+### 6.5 Eliminar Compra
+**Método:** `DELETE`  
+**Ruta:** `/api/purchases/:id`  
+**Descripción:** Elimina una compra existente. Requiere rol de admin o editor.  
+**Parámetros:**
+- `id`: ID de la compra (String).
+
+**Respuesta:**
+- `200`: Compra eliminada.
+```json
+{
+  "msg": "Compra eliminada"
+}
+```
+- `404`: Compra no encontrada.
+- `500`: Error en el servidor.
+
+---
+
+## 7. Servicios de Sesiones POS
+
+### 7.1 Obtener Todas las Sesiones POS
 **Método:** `GET`  
 **Ruta:** `/api/pos-sessions`  
 **Descripción:** Obtiene una lista de todas las sesiones POS.  
@@ -612,7 +837,7 @@ images: [archivo3.jpg]
 
 ---
 
-### 6.2 Obtener Sesión POS por ID
+### 7.2 Obtener Sesión POS por ID
 **Método:** `GET`  
 **Ruta:** `/api/pos-sessions/:id`  
 **Descripción:** Obtiene una sesión POS específica por su ID.  
@@ -674,7 +899,7 @@ images: [archivo3.jpg]
 
 ---
 
-### 6.3 Obtener Sesión Abierta de un Usuario
+### 7.3 Obtener Sesión Abierta de un Usuario
 **Método:** `GET`  
 **Ruta:** `/api/pos-sessions/user/:userId/open`  
 **Descripción:** Obtiene la sesión POS abierta de un usuario específico.  
@@ -718,7 +943,7 @@ images: [archivo3.jpg]
 
 ---
 
-### 6.4 Abrir Sesión POS (Abrir Caja)
+### 7.4 Abrir Sesión POS (Abrir Caja)
 **Método:** `POST`  
 **Ruta:** `/api/pos-sessions/open`  
 **Descripción:** Abre una nueva sesión POS (caja).  
@@ -758,7 +983,7 @@ images: [archivo3.jpg]
 
 ---
 
-### 6.5 Cerrar Sesión POS (Cerrar Caja)
+### 7.5 Cerrar Sesión POS (Cerrar Caja)
 **Método:** `POST`  
 **Ruta:** `/api/pos-sessions/close`  
 **Descripción:** Cierra una sesión POS (caja) existente.  
@@ -807,7 +1032,7 @@ images: [archivo3.jpg]
 
 ---
 
-### 6.6 Actualizar Sesión POS
+### 7.6 Actualizar Sesión POS
 **Método:** `PUT`  
 **Ruta:** `/api/pos-sessions/:id`  
 **Descripción:** Actualiza una sesión POS existente.  
