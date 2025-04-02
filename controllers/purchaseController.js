@@ -174,7 +174,7 @@ exports.deletePurchase = async (req, res) => {
     if (!purchase) return res.status(404).json({ msg: 'Compra no encontrada' });
     
     // The post('remove') hook will handle reversing the product quantities
-    await purchase.remove();
+    await Purchase.findByIdAndDelete(req.params.id);
     
     res.json({ msg: 'Compra eliminada' });
   } catch (error) {
