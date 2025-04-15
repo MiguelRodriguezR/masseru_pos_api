@@ -1,0 +1,1 @@
+* * * * * root /app/update.sh >> /var/log/update.log 2>&1
