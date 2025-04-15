@@ -1,7 +1,7 @@
 FROM node:14-alpine
 
-# Instalar git y cron
-RUN apk update && apk add --no-cache git cron
+# Instalar git y dcron 
+RUN apk update && apk add --no-cache git dcron
 
 # Instalar PM2 para la gestión del proceso
 RUN npm install -g pm2
