@@ -53,13 +53,28 @@ exports.createSale = async (req, res) => {
       product.quantity -= item.quantity;
       await product.save();
 
-      const itemTotal = product.salePrice * item.quantity;
+      let totalDiscount = 0;
+      if (item.discounts && item.discounts.length > 0) {
+        
+        totalDiscount = item.discounts.reduce((total, discount) => {
+          if(discount.type === 'percentage') {
+            return total + (product.salePrice * discount.value / 100);
+          } else if(discount.type === 'fixed') {
+            return total + discount.value;
+          }
+        }, 0);
+      }
+
+      const productSalePrice = product.salePrice - totalDiscount
+      const itemTotal = productSalePrice * item.quantity;
       totalAmount += itemTotal;
+      
       saleItems.push({
         product: product._id,
         quantity: item.quantity,
         variant: item.variant || null,
-        salePrice: product.salePrice
+        salePrice: productSalePrice,
+        discounts: item.discounts,  
       });
     }
 
@@ -168,7 +183,7 @@ exports.getSales = async (req, res) => {
       // primero obtener todas las ventas y luego filtrar manualmente
       allMatchingSales = await Sale.find({})
         .populate('user', 'name email')
-        .populate('items.product', 'name salePrice barcode images')
+      .populate('items.product', 'name salePrice barcode images')
         .populate('paymentMethod', 'name color icon')
         .sort({ saleDate: -1 });
       

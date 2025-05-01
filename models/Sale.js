@@ -5,7 +5,12 @@ const saleItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
   quantity: { type: Number, required: true },
   variant: { type: Object, default: null },
-  salePrice: { type: Number, required: true }
+  salePrice: { type: Number, required: true },
+  discounts: [{
+    type: { type: String, enum: ['percentage', 'fixed'], required: true },
+    value: { type: Number, required: true },
+    reason: { type: String }
+  }]
 }, { _id: false });
 
 const saleSchema = new mongoose.Schema({
