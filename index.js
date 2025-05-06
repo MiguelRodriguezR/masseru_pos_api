@@ -13,6 +13,7 @@ const statsRoutes = require('./routes/statsRoutes');
 const posSessionRoutes = require('./routes/posSessionRoutes');
 const paymentMethodRoutes = require('./routes/paymentMethodRoutes');
 const purchaseRoutes = require('./routes/purchaseRoutes');
+const operationalExpenseRoutes = require('./routes/operationalExpenseRoutes');
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/pos-sessions', posSessionRoutes);
 app.use('/api/payment-methods', paymentMethodRoutes);
 app.use('/api/purchases', purchaseRoutes);
+app.use('/api/operational-expenses', operationalExpenseRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
