@@ -204,7 +204,7 @@ exports.getPosSessionStats = async (req, res) => {
       if(endDate) saleFilter.saleDate.$lte = new Date(endDate);
     }
     
-    const sales = await Sale.find(saleFilter).populate('paymentMethod');
+    const sales = await Sale.find(saleFilter).populate('paymentDetails.paymentMethod');
     
     // Calculate sales by payment method
     const paymentMethodStats = {};
@@ -213,24 +213,28 @@ exports.getPosSessionStats = async (req, res) => {
     sales.forEach(sale => {
       totalSalesAmount += sale.totalAmount;
       
-      if (sale.paymentMethod) {
-        const methodId = sale.paymentMethod._id.toString();
+      // Process each payment detail in the sale
+      sale.paymentDetails.forEach(paymentDetail => {
+        if (!paymentDetail.paymentMethod) return;
+        
+        const methodId = paymentDetail.paymentMethod._id.toString();
+        const paymentAmount = paymentDetail.amount;
         
         if (!paymentMethodStats[methodId]) {
           paymentMethodStats[methodId] = {
             _id: methodId,
-            name: sale.paymentMethod.name,
-            code: sale.paymentMethod.code,
-            color: sale.paymentMethod.color,
-            icon: sale.paymentMethod.icon,
+            name: paymentDetail.paymentMethod.name,
+            code: paymentDetail.paymentMethod.code,
+            color: paymentDetail.paymentMethod.color,
+            icon: paymentDetail.paymentMethod.icon,
             totalAmount: 0,
             count: 0
           };
         }
         
-        paymentMethodStats[methodId].totalAmount += sale.totalAmount;
+        paymentMethodStats[methodId].totalAmount += paymentAmount;
         paymentMethodStats[methodId].count += 1;
-      }
+      });
     });
     
     // Convert to array for easier consumption by frontend
@@ -434,7 +438,7 @@ async function getPosSessionStatsData(startDate, endDate) {
     if(endDate) saleFilter.saleDate.$lte = new Date(endDate);
   }
   
-  const sales = await Sale.find(saleFilter).populate('paymentMethod');
+  const sales = await Sale.find(saleFilter).populate('paymentDetails.paymentMethod');
   
   // Calculate sales by payment method
   const paymentMethodStats = {};
@@ -443,24 +447,28 @@ async function getPosSessionStatsData(startDate, endDate) {
   sales.forEach(sale => {
     totalSalesAmount += sale.totalAmount;
     
-    if (sale.paymentMethod) {
-      const methodId = sale.paymentMethod._id.toString();
+    // Process each payment detail in the sale
+    sale.paymentDetails.forEach(paymentDetail => {
+      if (!paymentDetail.paymentMethod) return;
+      
+      const methodId = paymentDetail.paymentMethod._id.toString();
+      const paymentAmount = paymentDetail.amount;
       
       if (!paymentMethodStats[methodId]) {
         paymentMethodStats[methodId] = {
           _id: methodId,
-          name: sale.paymentMethod.name,
-          code: sale.paymentMethod.code,
-          color: sale.paymentMethod.color,
-          icon: sale.paymentMethod.icon,
+          name: paymentDetail.paymentMethod.name,
+          code: paymentDetail.paymentMethod.code,
+          color: paymentDetail.paymentMethod.color,
+          icon: paymentDetail.paymentMethod.icon,
           totalAmount: 0,
           count: 0
         };
       }
       
-      paymentMethodStats[methodId].totalAmount += sale.totalAmount;
+      paymentMethodStats[methodId].totalAmount += paymentAmount;
       paymentMethodStats[methodId].count += 1;
-    }
+    });
   });
   
   // Convert to array for easier consumption by frontend

@@ -76,7 +76,7 @@ exports.closeSession = async (req, res) => {
 
     // Calculate totals from all sales in this session
     const sales = await Sale.find({ _id: { $in: session.sales } })
-      .populate('paymentMethod');
+      .populate('paymentDetails.paymentMethod');
     
     // Group sales by payment method and calculate totals
     const paymentTotals = [];
@@ -88,29 +88,36 @@ exports.closeSession = async (req, res) => {
     sales.forEach(sale => {
       totalSales += sale.totalAmount;
       
-      // Find if this payment method is already in our totals
-      const paymentMethodId = sale.paymentMethod._id.toString();
-      let paymentTotal = paymentTotals.find(pt => 
-        pt.paymentMethod.toString() === paymentMethodId
-      );
-      
-      // If not found, create a new entry
-      if (!paymentTotal) {
-        paymentTotals.push({
-          paymentMethod: sale.paymentMethod._id,
-          total: sale.totalAmount
-        });
-      } else {
-        // Update existing total
-        paymentTotal.total += sale.totalAmount;
-      }
-      
-      // Check if this is a cash payment method (code CASH)
-      if (sale.paymentMethod.code === 'CASH') {
-        cashTotal += sale.totalAmount;
-      } else {
-        nonCashTotal += sale.totalAmount;
-      }
+      // Process each payment detail in the sale
+      sale.paymentDetails.forEach(paymentDetail => {
+        if (!paymentDetail.paymentMethod) return;
+        
+        const paymentMethodId = paymentDetail.paymentMethod._id.toString();
+        const paymentAmount = paymentDetail.amount;
+        
+        // Find if this payment method is already in our totals
+        let paymentTotal = paymentTotals.find(pt => 
+          pt.paymentMethod.toString() === paymentMethodId
+        );
+        
+        // If not found, create a new entry
+        if (!paymentTotal) {
+          paymentTotals.push({
+            paymentMethod: paymentDetail.paymentMethod._id,
+            total: paymentAmount
+          });
+        } else {
+          // Update existing total
+          paymentTotal.total += paymentAmount;
+        }
+        
+        // Check if this is a cash payment method (code CASH)
+        if (paymentDetail.paymentMethod.code === 'CASH') {
+          cashTotal += paymentAmount;
+        } else {
+          nonCashTotal += paymentAmount;
+        }
+      });
     });
     
     // Calculate expected cash and difference
@@ -261,7 +268,7 @@ exports.getSessionById = async (req, res) => {
             select: 'name email'
           },
           {
-            path: 'paymentMethod',
+            path: 'paymentDetails.paymentMethod',
             select: 'name code color icon'
           }
         ]
@@ -333,8 +340,8 @@ exports.addSaleToSession = async (saleId, userId) => {
     // Add the sale to the session
     openSession.sales.push(saleId);
     
-    // Get the sale details with payment method
-    const sale = await Sale.findById(saleId).populate('paymentMethod');
+    // Get the sale details with payment details
+    const sale = await Sale.findById(saleId).populate('paymentDetails.paymentMethod');
     
     if (!sale) {
       console.error('Venta no encontrada');
@@ -347,31 +354,39 @@ exports.addSaleToSession = async (saleId, userId) => {
     let expectedCash = openSession.initialCash;
     let expectedNonCash = openSession.expectedNonCash || 0;
     
-    // Find if this payment method is already in our totals
-    const paymentMethodId = sale.paymentMethod._id.toString();
-    let paymentTotal = paymentTotals.find(pt => 
-      pt.paymentMethod && pt.paymentMethod.toString() === paymentMethodId
-    );
-    
-    // If not found, create a new entry
-    if (!paymentTotal) {
-      paymentTotals.push({
-        paymentMethod: sale.paymentMethod._id,
-        total: sale.totalAmount
-      });
-    } else {
-      // Update existing total
-      paymentTotal.total += sale.totalAmount;
-    }
-    
     // Update total sales
     totalSales += sale.totalAmount;
     
-    // Update expected cash if this is a cash payment, otherwise update expected non-cash
-    if (sale.paymentMethod.code === 'CASH') {
-      expectedCash += sale.totalAmount;
-    } else {
-      expectedNonCash += sale.totalAmount;
+    // Process each payment method in the sale
+    for (const paymentDetail of sale.paymentDetails) {
+      const paymentMethod = paymentDetail.paymentMethod;
+      const paymentAmount = paymentDetail.amount;
+      
+      if (!paymentMethod) continue;
+      
+      // Find if this payment method is already in our totals
+      const paymentMethodId = paymentMethod._id.toString();
+      let paymentTotal = paymentTotals.find(pt => 
+        pt.paymentMethod && pt.paymentMethod.toString() === paymentMethodId
+      );
+      
+      // If not found, create a new entry
+      if (!paymentTotal) {
+        paymentTotals.push({
+          paymentMethod: paymentMethod._id,
+          total: paymentAmount
+        });
+      } else {
+        // Update existing total
+        paymentTotal.total += paymentAmount;
+      }
+      
+      // Update expected cash if this is a cash payment, otherwise update expected non-cash
+      if (paymentMethod.code === 'CASH') {
+        expectedCash += paymentAmount;
+      } else {
+        expectedNonCash += paymentAmount;
+      }
     }
     
     // Update session

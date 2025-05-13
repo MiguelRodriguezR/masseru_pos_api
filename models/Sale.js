@@ -13,13 +13,18 @@ const saleItemSchema = new mongoose.Schema({
   }]
 }, { _id: false });
 
+const paymentDetailSchema = new mongoose.Schema({
+  paymentMethod: { type: mongoose.Schema.Types.ObjectId, ref: 'PaymentMethod', required: true },
+  amount: { type: Number, required: true }
+}, { _id: false });
+
 const saleSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   items: [saleItemSchema],
   totalAmount: { type: Number, required: true },
-  paymentAmount: { type: Number, required: true },
+  paymentDetails: [paymentDetailSchema],
+  totalPaymentAmount: { type: Number, required: true },
   changeAmount: { type: Number, required: true },
-  paymentMethod: { type: mongoose.Schema.Types.ObjectId, ref: 'PaymentMethod', required: true },
   saleDate: { type: Date, default: Date.now }
 }, { timestamps: true });
 

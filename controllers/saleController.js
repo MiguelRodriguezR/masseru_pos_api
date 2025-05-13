@@ -5,18 +5,27 @@ const { addSaleToSession } = require('./posSessionController');
 
 exports.createSale = async (req, res) => {
   try {
-    const { items, paymentAmount, paymentMethod } = req.body; // items: [{ productId, quantity, variant (opcional) }], paymentAmount: monto con el que paga el cliente, paymentMethod: método de pago (cash o credit_card)
+    const { items, paymentDetails } = req.body; // items: [{ productId, quantity, variant (opcional) }], paymentDetails: [{ paymentMethod, amount }]
     if(!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ msg: 'Debe enviar al menos un producto' });
     }
     
-    if(!paymentAmount || paymentAmount <= 0) {
-      return res.status(400).json({ msg: 'Debe enviar un monto de pago válido' });
+    if(!paymentDetails || !Array.isArray(paymentDetails) || paymentDetails.length === 0) {
+      return res.status(400).json({ msg: 'Debe enviar al menos un método de pago con su monto' });
     }
     
-    if(!paymentMethod) {
-      return res.status(400).json({ msg: 'Debe enviar un método de pago válido (cash o credit_card)' });
+    // Validar que cada detalle de pago tenga método de pago y monto válido
+    for (const payment of paymentDetails) {
+      if (!payment.paymentMethod) {
+        return res.status(400).json({ msg: 'Todos los pagos deben tener un método de pago válido' });
+      }
+      if (!payment.amount || payment.amount <= 0) {
+        return res.status(400).json({ msg: 'Todos los pagos deben tener un monto válido mayor a 0' });
+      }
     }
+    
+    // Calcular el monto total de pago
+    const totalPaymentAmount = paymentDetails.reduce((sum, payment) => sum + payment.amount, 0);
 
     let totalAmount = 0;
     const saleItems = [];
@@ -79,20 +88,20 @@ exports.createSale = async (req, res) => {
     }
 
     // Verificar que el pago sea suficiente
-    if(paymentAmount < totalAmount) {
-      return res.status(400).json({ msg: 'El monto de pago es insuficiente para cubrir el total de la venta' });
+    if(totalPaymentAmount < totalAmount) {
+      return res.status(400).json({ msg: 'El monto total de pago es insuficiente para cubrir el total de la venta' });
     }
     
     // Calcular el cambio
-    const changeAmount = paymentAmount - totalAmount;
+    const changeAmount = totalPaymentAmount - totalAmount;
 
     const sale = new Sale({
       user: req.user.id,
       items: saleItems,
       totalAmount,
-      paymentAmount,
+      paymentDetails,
+      totalPaymentAmount,
       changeAmount,
-      paymentMethod,
       saleDate: new Date()
     });
 
@@ -184,7 +193,7 @@ exports.getSales = async (req, res) => {
       allMatchingSales = await Sale.find({})
         .populate('user', 'name email')
       .populate('items.product', 'name salePrice barcode images')
-        .populate('paymentMethod', 'name color icon')
+        .populate('paymentDetails.paymentMethod', 'name color icon')
         .sort({ saleDate: -1 });
       
       // Filtrar manualmente por nombre de producto o código de barras
@@ -250,7 +259,7 @@ exports.getSales = async (req, res) => {
       const sales = await Sale.find(query)
         .populate('user', 'name email')
         .populate('items.product', 'name salePrice barcode images')
-        .populate('paymentMethod', 'name color icon')
+        .populate('paymentDetails.paymentMethod', 'name color icon')
         .sort({ saleDate: -1 }) // Ordenar por fecha de venta, más reciente primero
         .skip(skip)
         .limit(limit);
@@ -277,7 +286,7 @@ exports.getSaleById = async (req, res) => {
     const sale = await Sale.findById(req.params.id)
       .populate('user', 'name email')
       .populate('items.product', 'name salePrice barcode description images')
-      .populate('paymentMethod', 'name color icon');
+      .populate('paymentDetails.paymentMethod', 'name color icon');
     
     if(!sale) return res.status(404).json({ msg: 'Venta no encontrada' });
     
