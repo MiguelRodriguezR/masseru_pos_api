@@ -113,7 +113,7 @@ exports.closeSession = async (req, res) => {
         
         // Check if this is a cash payment method (code CASH)
         if (paymentDetail.paymentMethod.code === 'CASH') {
-          cashTotal += paymentAmount;
+          cashTotal += paymentAmount - sale.changeAmount;
         } else {
           nonCashTotal += paymentAmount;
         }
@@ -351,7 +351,7 @@ exports.addSaleToSession = async (saleId, userId) => {
     // Update payment totals
     let paymentTotals = openSession.paymentTotals || [];
     let totalSales = openSession.totalSales || 0;
-    let expectedCash = openSession.initialCash;
+    let expectedCash = openSession.expectedCash || 0;
     let expectedNonCash = openSession.expectedNonCash || 0;
     
     // Update total sales
@@ -383,7 +383,7 @@ exports.addSaleToSession = async (saleId, userId) => {
       
       // Update expected cash if this is a cash payment, otherwise update expected non-cash
       if (paymentMethod.code === 'CASH') {
-        expectedCash += paymentAmount;
+        expectedCash += paymentAmount - sale.changeAmount;
       } else {
         expectedNonCash += paymentAmount;
       }
