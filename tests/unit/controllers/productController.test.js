@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
+const { MESSAGES } = require('../../../config/messages');
 const productController = require('../../../controllers/productController');
 const Product = require('../../../models/Product');
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
@@ -82,7 +83,7 @@ describe('Product Controller', () => {
       });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Producto creado',
+        msg: MESSAGES.PRODUCT_CREATED,
         product: expect.objectContaining({
           ...savedProduct,
           save: expect.any(Function)
@@ -138,7 +139,7 @@ describe('Product Controller', () => {
       });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Producto creado',
+        msg: MESSAGES.PRODUCT_CREATED,
         product: expect.objectContaining({
           ...savedProduct,
           save: expect.any(Function)
@@ -191,7 +192,7 @@ describe('Product Controller', () => {
       });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Producto creado',
+        msg: MESSAGES.PRODUCT_CREATED,
         product: expect.objectContaining({
           ...savedProduct,
           save: expect.any(Function)
@@ -373,7 +374,7 @@ describe('Product Controller', () => {
       // Assertions
       expect(Product.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Producto no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PRODUCT_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -443,7 +444,7 @@ describe('Product Controller', () => {
         { new: true }
       );
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Producto actualizado',
+        msg: MESSAGES.PRODUCT_UPDATED,
         product: updatedProduct
       });
     });
@@ -491,7 +492,7 @@ describe('Product Controller', () => {
         { new: true }
       );
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Producto actualizado',
+        msg: MESSAGES.PRODUCT_UPDATED,
         product: updatedProduct
       });
     });
@@ -548,7 +549,7 @@ describe('Product Controller', () => {
         { new: true }
       );
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Producto actualizado',
+        msg: MESSAGES.PRODUCT_UPDATED,
         product: updatedProduct
       });
     });
@@ -571,7 +572,7 @@ describe('Product Controller', () => {
       // Assertions
       expect(Product.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Producto no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PRODUCT_NOT_FOUND });
     });
 
     test('should handle invalid JSON format', async () => {
@@ -653,7 +654,7 @@ describe('Product Controller', () => {
       expect(fs.existsSync).toHaveBeenCalledWith('/full/path/to/uploads/products/test-image.jpg');
       expect(fs.unlinkSync).toHaveBeenCalledWith('/full/path/to/uploads/products/test-image.jpg');
       expect(Product.findByIdAndDelete).toHaveBeenCalledWith(mockProduct._id.toString());
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Producto eliminado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PRODUCT_DELETED });
     });
 
     test('should return 404 if product not found', async () => {
@@ -669,7 +670,7 @@ describe('Product Controller', () => {
       // Assertions
       expect(Product.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Producto no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PRODUCT_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -889,7 +890,7 @@ describe('Product Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'La cantidad a agregar debe ser un número positivo' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.INVALID_QUANTITY });
     });
 
     test('should return 404 if product not found', async () => {
@@ -910,7 +911,7 @@ describe('Product Controller', () => {
       // Assertions
       expect(Product.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Producto no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PRODUCT_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {

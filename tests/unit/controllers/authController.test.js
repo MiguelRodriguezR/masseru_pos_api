@@ -6,6 +6,9 @@ const authController = require('../../../controllers/authController');
 const User = require('../../../models/User');
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { mockUser, mockUnapprovedUser } = require('../../mocks/userMock');
+const { makeSavedUser } = require('../../mocks/userFactory');
+const { mockRegister } = require('../../utils/userControllerHelpers');
+const { MESSAGES } = require('../../../config/messages');
 const { secret, expiresIn } = require('../../../config/jwt');
 
 // Mock the mongoose models and external libraries
@@ -14,12 +17,18 @@ jest.mock('bcryptjs');
 jest.mock('jsonwebtoken');
 
 describe('Auth Controller', () => {
-  let req, res;
+  let req, res, userData;
 
   beforeEach(() => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    userData = {
+        name: 'Existing User',
+        email: 'existing@example.com',
+        password: 'password123',
+        role: 'user'
+      };
   });
 
   afterEach(() => {
@@ -27,41 +36,32 @@ describe('Auth Controller', () => {
   });
 
   describe('register', () => {
-    test('should register a new user successfully when it is the first user', async () => {
-      // Mock user data
-      const userData = {
-        name: 'New User',
-        email: 'newuser@example.com',
-        password: 'password123',
-        role: 'user'
-      };
-
-      // Mock request
+    test.each([
+      { 
+        isFirst: true, 
+        count: 0, 
+        expectedRole: 'admin', 
+        expectedApproved: true,
+        expectedMessage: MESSAGES.REGISTER_FIRST
+      },
+      { 
+        isFirst: false, 
+        count: 1, 
+        expectedRole: 'user', 
+        expectedApproved: false,
+        expectedMessage: MESSAGES.REGISTER_PENDING
+      }
+    ])('should register new user when isFirst=$isFirst', async ({ isFirst, count, expectedRole, expectedApproved, expectedMessage }) => {
+      
       req = mockRequest(userData);
+      const savedUser = makeSavedUser({ isFirst });
 
-      // Mock User.findOne to return null (user doesn't exist)
-      User.findOne = jest.fn().mockResolvedValue(null);
-
-      // Mock User.countDocuments to return 0 (first user)
-      User.countDocuments = jest.fn().mockResolvedValue(0);
-
-      // Mock bcrypt.hash
-      bcrypt.hash = jest.fn().mockResolvedValue('hashedpassword');
-
-      // Mock User constructor and save method
-      const savedUser = {
-        ...userData,
-        password: 'hashedpassword',
-        role: 'admin', // First user should be admin
-        approved: true, // First user should be approved
-        _id: new mongoose.Types.ObjectId()
-      };
-
-      const mockUserInstance = {
-        ...savedUser,
-        save: jest.fn().mockResolvedValue(savedUser)
-      };
-      User.mockImplementation(() => mockUserInstance);
+      mockRegister({
+        exists: false,
+        count,
+        hash: 'hashedpassword',
+        savedUser
+      });
 
       // Execute the controller
       await authController.register(req, res);
@@ -74,72 +74,12 @@ describe('Auth Controller', () => {
         name: userData.name,
         email: userData.email,
         password: 'hashedpassword',
-        role: 'admin', // First user should be admin
-        approved: true // First user should be approved
+        role: expectedRole, // First user should be admin
+        approved: expectedApproved // First user should be approved
       });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Usuario administrador registrado y aprobado',
-        user: expect.objectContaining({
-          ...savedUser,
-          save: expect.any(Function)
-        })
-      });
-    });
-
-    test('should register a new user successfully when it is not the first user', async () => {
-      // Mock user data
-      const userData = {
-        name: 'New User',
-        email: 'newuser@example.com',
-        password: 'password123',
-        role: 'user'
-      };
-
-      // Mock request
-      req = mockRequest(userData);
-
-      // Mock User.findOne to return null (user doesn't exist)
-      User.findOne = jest.fn().mockResolvedValue(null);
-
-      // Mock User.countDocuments to return 1 (not first user)
-      User.countDocuments = jest.fn().mockResolvedValue(1);
-
-      // Mock bcrypt.hash
-      bcrypt.hash = jest.fn().mockResolvedValue('hashedpassword');
-
-      // Mock User constructor and save method
-      const savedUser = {
-        ...userData,
-        password: 'hashedpassword',
-        role: 'user', // Not first user, so role remains as provided
-        approved: false, // Not first user, so needs approval
-        _id: new mongoose.Types.ObjectId()
-      };
-
-      const mockUserInstance = {
-        ...savedUser,
-        save: jest.fn().mockResolvedValue(savedUser)
-      };
-      User.mockImplementation(() => mockUserInstance);
-
-      // Execute the controller
-      await authController.register(req, res);
-
-      // Assertions
-      expect(User.findOne).toHaveBeenCalledWith({ email: userData.email });
-      expect(User.countDocuments).toHaveBeenCalled();
-      expect(bcrypt.hash).toHaveBeenCalledWith(userData.password, 10);
-      expect(User).toHaveBeenCalledWith({
-        name: userData.name,
-        email: userData.email,
-        password: 'hashedpassword',
-        role: userData.role, // Role remains as provided
-        approved: false // Needs approval
-      });
-      expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith({
-        msg: 'Usuario registrado. Pendiente de aprobación por un administrador',
+        msg: expectedMessage,
         user: expect.objectContaining({
           ...savedUser,
           save: expect.any(Function)
@@ -148,13 +88,6 @@ describe('Auth Controller', () => {
     });
 
     test('should return 400 if user already exists', async () => {
-      // Mock user data
-      const userData = {
-        name: 'Existing User',
-        email: 'existing@example.com',
-        password: 'password123',
-        role: 'user'
-      };
 
       // Mock request
       req = mockRequest(userData);
@@ -168,17 +101,11 @@ describe('Auth Controller', () => {
       // Assertions
       expect(User.findOne).toHaveBeenCalledWith({ email: userData.email });
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Usuario ya existe' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.ALREADY_EXISTS });
     });
 
     test('should handle server errors', async () => {
       // Mock user data
-      const userData = {
-        name: 'New User',
-        email: 'newuser@example.com',
-        password: 'password123',
-        role: 'user'
-      };
 
       // Mock request
       req = mockRequest(userData);
@@ -266,7 +193,7 @@ describe('Auth Controller', () => {
       // Assertions
       expect(User.findOne).toHaveBeenCalledWith({ email: loginData.email });
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Credenciales inválidas' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.INVALID_CREDENTIALS });
     });
 
     test('should return 400 if password is incorrect', async () => {
@@ -292,7 +219,7 @@ describe('Auth Controller', () => {
       expect(User.findOne).toHaveBeenCalledWith({ email: loginData.email });
       expect(bcrypt.compare).toHaveBeenCalledWith(loginData.password, mockUser.password);
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Credenciales inválidas' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.INVALID_CREDENTIALS });
     });
 
     test('should return 403 if user is not approved', async () => {
@@ -319,7 +246,7 @@ describe('Auth Controller', () => {
       expect(bcrypt.compare).toHaveBeenCalledWith(loginData.password, mockUnapprovedUser.password);
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Tu cuenta está pendiente de aprobación por un administrador'
+        msg: MESSAGES.PENDING_APPROVAL
       });
     });
 

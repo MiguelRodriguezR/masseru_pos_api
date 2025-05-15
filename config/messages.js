@@ -1,0 +1,67 @@
+const MESSAGES= {
+  ALREADY_EXISTS: 'Usuario ya existe',
+  REGISTER_FIRST: 'Usuario administrador registrado y aprobado',
+  REGISTER_PENDING: 'Usuario registrado. Pendiente de aprobación por un administrador',
+  INVALID_CREDENTIALS: 'Credenciales inválidas', 
+  PENDING_APPROVAL: 'Tu cuenta está pendiente de aprobación por un administrador',
+  OPERATIONAL_EXPENSE_NOT_FOUND: 'Gasto operativo no encontrado',
+  OPERATIONAL_EXPENSE_UPDATED: 'Gasto operativo actualizado',
+  OPERATIONAL_EXPENSE_DELETED: 'Gasto operativo eliminado',
+  // User messages
+  USER_NOT_FOUND: 'Usuario no encontrado',
+  USER_UPDATED: 'Usuario actualizado',
+  USER_APPROVED: 'Usuario aprobado exitosamente',
+  USER_ALREADY_APPROVED: 'Usuario ya está aprobado',
+  USER_DELETED: 'Usuario eliminado',
+  // Stats messages
+  STATS_ERROR: 'Error al obtener estadísticas',
+  // Payment Method messages
+  PAYMENT_METHOD_NOT_FOUND: 'Método de pago no encontrado',
+  PAYMENT_METHOD_CREATED: 'Método de pago creado exitosamente',
+  PAYMENT_METHOD_UPDATED: 'Método de pago actualizado exitosamente',
+  PAYMENT_METHOD_DELETED: 'Método de pago eliminado exitosamente',
+  PAYMENT_METHOD_EXISTS: 'Ya existe un método de pago con ese nombre o código',
+  PAYMENT_METHOD_EXISTS_OTHER: 'Ya existe otro método de pago con ese nombre o código',
+  PAYMENT_METHOD_GET_ERROR: 'Error al obtener los métodos de pago',
+  PAYMENT_METHOD_GET_SINGLE_ERROR: 'Error al obtener el método de pago',
+  PAYMENT_METHOD_CREATE_ERROR: 'Error al crear el método de pago',
+  PAYMENT_METHOD_UPDATE_ERROR: 'Error al actualizar el método de pago',
+  PAYMENT_METHOD_DELETE_ERROR: 'Error al eliminar el método de pago',
+  PAYMENT_METHOD_GET_ACTIVE_ERROR: 'Error al obtener los métodos de pago activos',
+  // Sale messages
+  SALE_CREATED: 'Venta creada',
+  MISSING_ITEMS: 'Debe enviar al menos un producto',
+  MISSING_PAYMENTS: 'Debe enviar al menos un método de pago con su monto',
+  INVALID_PAYMENT_METHOD: 'Todos los pagos deben tener un método de pago válido',
+  INVALID_PAYMENT_AMOUNT: 'Todos los pagos deben tener un monto válido mayor a 0',
+  INSUFFICIENT_STOCK: 'Inventario insuficiente',
+  SALE_NOT_FOUND: 'Venta no encontrada',
+  INSUFFICIENT_PAYMENT: 'El monto total de pago es insuficiente para cubrir el total de la venta',
+  // Product messages
+  PRODUCT_CREATED: 'Producto creado',
+  PRODUCT_NOT_FOUND: 'Producto no encontrado',
+  PRODUCT_UPDATED: 'Producto actualizado',
+  PRODUCT_DELETED: 'Producto eliminado',
+  INVALID_QUANTITY: 'La cantidad a agregar debe ser un número positivo',
+  // Purchase messages
+  PURCHASE_NOT_FOUND: 'Compra no encontrada',
+  PURCHASE_CREATED: 'Compra creada',
+  PURCHASE_UPDATED: 'Compra actualizada',
+  PURCHASE_DELETED: 'Compra eliminada',
+  MISSING_PRODUCTS: 'Debe incluir al menos un producto',
+  INVALID_PURCHASE_ITEMS: 'Cada item debe tener product, quantity y purchasePrice',
+  // POS Session messages
+  SESSION_OPENED: 'Sesión de caja abierta correctamente',
+  SESSION_ALREADY_OPEN: 'Ya tienes una sesión de caja abierta. Cierra la sesión actual antes de abrir una nueva.',
+  INVALID_INITIAL_CASH: 'Debe proporcionar un monto inicial de caja válido (mayor o igual a 0)',
+  SESSION_CLOSED: 'Sesión de caja cerrada correctamente',
+  SESSION_ID_REQUIRED: 'ID de sesión requerido',
+  INVALID_FINAL_CASH: 'Debe proporcionar el monto final de caja (mayor o igual a 0)',
+  SESSION_NOT_FOUND: 'Sesión no encontrada',
+  SESSION_NOT_OWNED: 'No tienes permiso para cerrar esta sesión',
+  SESSION_ALREADY_CLOSED: 'Esta sesión ya está cerrada',
+  NO_OPEN_SESSION: 'No hay sesión abierta para este usuario',
+  USER_ID_REQUIRED: 'ID de usuario requerido'
+};
+
+module.exports = {MESSAGES};

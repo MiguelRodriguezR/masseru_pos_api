@@ -2,6 +2,7 @@
 const mongoose = require('mongoose');
 const posSessionController = require('../../../controllers/posSessionController');
 const PosSession = require('../../../models/PosSession');
+const { MESSAGES } = require('../../../config/messages');
 const Sale = require('../../../models/Sale');
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
@@ -61,7 +62,7 @@ describe('POS Session Controller', () => {
       });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Sesión de caja abierta correctamente',
+        msg: MESSAGES.SESSION_OPENED,
         session: expect.anything()
       });
     });
@@ -80,7 +81,7 @@ describe('POS Session Controller', () => {
       });
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ 
-        msg: 'Ya tienes una sesión de caja abierta. Cierra la sesión actual antes de abrir una nueva.' 
+        msg: MESSAGES.SESSION_ALREADY_OPEN
       });
     });
 
@@ -91,7 +92,7 @@ describe('POS Session Controller', () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ 
-        msg: 'Debe proporcionar un monto inicial de caja válido (mayor o igual a 0)' 
+        msg: MESSAGES.INVALID_INITIAL_CASH
       });
     });
 
@@ -167,7 +168,7 @@ describe('POS Session Controller', () => {
       
       // Verify response contains all required financial data
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        msg: 'Sesión de caja cerrada correctamente',
+        msg: MESSAGES.SESSION_CLOSED,
         session: expect.objectContaining({
           expectedCash: 1500, // 1000 + 120 + 300 + 100 - 20 (change)
           expectedNonCash: 650, // 150 + 500
@@ -197,7 +198,7 @@ describe('POS Session Controller', () => {
 
       // 3. Verify results
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'ID de sesión requerido' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.SESSION_ID_REQUIRED });
     });
 
     test('should return 400 if actualCash is invalid', async () => {
@@ -213,7 +214,7 @@ describe('POS Session Controller', () => {
       // 3. Verify results
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ 
-        msg: 'Debe proporcionar el monto final de caja (mayor o igual a 0)' 
+        msg: MESSAGES.INVALID_FINAL_CASH
       });
     });
 
@@ -230,7 +231,7 @@ describe('POS Session Controller', () => {
 
       // 3. Verify results
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Sesión no encontrada' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.SESSION_NOT_FOUND });
     });
 
     test('should return 403 if user does not own the session', async () => {
@@ -256,7 +257,7 @@ describe('POS Session Controller', () => {
       // 3. Verify results
       expect(res.status).toHaveBeenCalledWith(403);
       expect(res.json).toHaveBeenCalledWith({ 
-        msg: 'No tienes permiso para cerrar esta sesión' 
+        msg: MESSAGES.SESSION_NOT_OWNED
       });
     });
 
@@ -282,7 +283,7 @@ describe('POS Session Controller', () => {
 
       // 3. Verify results
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Esta sesión ya está cerrada' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.SESSION_ALREADY_CLOSED });
     });
 
     test('should handle server errors', async () => {
@@ -346,7 +347,7 @@ describe('POS Session Controller', () => {
 
       // 3. Verify results
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'ID de usuario requerido' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.USER_ID_REQUIRED });
     });
 
     test('should return 404 if no open session found', async () => {
@@ -365,7 +366,7 @@ describe('POS Session Controller', () => {
       // 3. Verify results
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json).toHaveBeenCalledWith({ 
-        msg: 'No hay sesión abierta para este usuario',
+        msg: MESSAGES.NO_OPEN_SESSION,
         hasOpenSession: false
       });
     });

@@ -1,5 +1,6 @@
 // Imports
 const mongoose = require('mongoose');
+const { MESSAGES } = require('../../../config/messages');
 const operationalExpenseController = require('../../../controllers/operationalExpenseController');
 const OperationalExpense = require('../../../models/OperationalExpense');
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
@@ -155,7 +156,7 @@ describe('Operational Expense Controller', () => {
       // Assertions
       expect(OperationalExpense.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Gasto operativo no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.OPERATIONAL_EXPENSE_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -367,7 +368,7 @@ describe('Operational Expense Controller', () => {
       expect(expenseToUpdate.date).toBe(updateData.date);
       expect(expenseToUpdate.save).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Gasto operativo actualizado',
+        msg: MESSAGES.OPERATIONAL_EXPENSE_UPDATED,
         operationalExpense: expect.objectContaining(updateData)
       });
     });
@@ -408,7 +409,7 @@ describe('Operational Expense Controller', () => {
       expect(expenseToUpdate.date).toBe(originalExpense.date); // Unchanged
       expect(expenseToUpdate.save).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Gasto operativo actualizado',
+        msg: MESSAGES.OPERATIONAL_EXPENSE_UPDATED,
         operationalExpense: expect.objectContaining({
           reason: updateData.reason
         })
@@ -433,7 +434,7 @@ describe('Operational Expense Controller', () => {
       // Assertions
       expect(OperationalExpense.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Gasto operativo no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.OPERATIONAL_EXPENSE_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -477,7 +478,7 @@ describe('Operational Expense Controller', () => {
       // Assertions
       expect(OperationalExpense.findById).toHaveBeenCalledWith(mockOperationalExpense._id.toString());
       expect(OperationalExpense.findByIdAndDelete).toHaveBeenCalledWith(mockOperationalExpense._id.toString());
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Gasto operativo eliminado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.OPERATIONAL_EXPENSE_DELETED });
     });
 
     test('should return 404 if operational expense not found', async () => {
@@ -493,7 +494,7 @@ describe('Operational Expense Controller', () => {
       // Assertions
       expect(OperationalExpense.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Gasto operativo no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.OPERATIONAL_EXPENSE_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {

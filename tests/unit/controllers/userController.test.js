@@ -1,5 +1,6 @@
 // Imports
 const mongoose = require('mongoose');
+const { MESSAGES } = require('../../../config/messages');
 const userController = require('../../../controllers/userController');
 const User = require('../../../models/User');
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
@@ -87,7 +88,7 @@ describe('User Controller', () => {
       // Assertions
       expect(User.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Usuario no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.USER_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -140,7 +141,7 @@ describe('User Controller', () => {
         { new: true }
       );
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Usuario actualizado',
+        msg: MESSAGES.USER_UPDATED,
         user: updatedUser
       });
     });
@@ -174,7 +175,7 @@ describe('User Controller', () => {
         { new: true }
       );
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Usuario actualizado',
+        msg: MESSAGES.USER_UPDATED,
         user: updatedUser
       });
     });
@@ -203,7 +204,7 @@ describe('User Controller', () => {
         { new: true }
       );
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Usuario no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.USER_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -258,7 +259,7 @@ describe('User Controller', () => {
         { new: true }
       );
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Usuario aprobado exitosamente',
+        msg: MESSAGES.USER_APPROVED,
         user: approvedUser
       });
     });
@@ -277,7 +278,7 @@ describe('User Controller', () => {
       expect(User.findById).toHaveBeenCalledWith(mockUser._id.toString());
       expect(User.findByIdAndUpdate).not.toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Usuario ya está aprobado',
+        msg: MESSAGES.USER_ALREADY_APPROVED,
         user: mockUser
       });
     });
@@ -295,7 +296,7 @@ describe('User Controller', () => {
       // Assertions
       expect(User.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Usuario no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.USER_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -330,7 +331,7 @@ describe('User Controller', () => {
 
       // Assertions
       expect(User.findByIdAndDelete).toHaveBeenCalledWith(mockUser._id.toString());
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Usuario eliminado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.USER_DELETED });
     });
 
     test('should return 404 if user not found', async () => {
@@ -346,7 +347,7 @@ describe('User Controller', () => {
       // Assertions
       expect(User.findByIdAndDelete).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Usuario no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.USER_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {

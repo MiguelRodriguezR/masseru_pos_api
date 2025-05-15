@@ -5,6 +5,7 @@ const Sale = require('../../../models/Sale');
 const Product = require('../../../models/Product');
 const PosSession = require('../../../models/PosSession');
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
+const { MESSAGES } = require('../../../config/messages');
 const { 
   mockCashSale, 
   mockCardSale, 
@@ -148,9 +149,8 @@ describe('Stats Controller', () => {
 
     test('should handle server errors', async () => {
       // Mock Sale.find to throw an error
-      const errorMessage = 'Database connection error';
       Sale.find = jest.fn().mockImplementation(() => {
-        throw new Error(errorMessage);
+        throw new Error(MESSAGES.STATS_ERROR);
       });
 
       // Execute the controller
@@ -158,7 +158,7 @@ describe('Stats Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
+      expect(res.json).toHaveBeenCalledWith({ error: MESSAGES.STATS_ERROR });
     });
   });
 
@@ -238,9 +238,8 @@ describe('Stats Controller', () => {
 
     test('should handle server errors', async () => {
       // Mock Product.find to throw an error
-      const errorMessage = 'Database connection error';
       Product.find = jest.fn().mockImplementation(() => {
-        throw new Error(errorMessage);
+        throw new Error(MESSAGES.STATS_ERROR);
       });
 
       // Execute the controller
@@ -248,7 +247,7 @@ describe('Stats Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
+      expect(res.json).toHaveBeenCalledWith({ error: MESSAGES.STATS_ERROR });
     });
   });
 
@@ -311,9 +310,8 @@ describe('Stats Controller', () => {
 
     test('should handle server errors', async () => {
       // Mock Sale.find to throw an error
-      const errorMessage = 'Database connection error';
       Sale.find = jest.fn().mockImplementation(() => {
-        throw new Error(errorMessage);
+        throw new Error(MESSAGES.STATS_ERROR);
       });
 
       // Execute the controller
@@ -321,7 +319,7 @@ describe('Stats Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
+      expect(res.json).toHaveBeenCalledWith({ error: MESSAGES.STATS_ERROR });
     });
   });
 
@@ -415,9 +413,8 @@ describe('Stats Controller', () => {
 
     test('should handle server errors', async () => {
       // Mock PosSession.find to throw an error
-      const errorMessage = 'Database connection error';
       PosSession.find = jest.fn().mockImplementation(() => {
-        throw new Error(errorMessage);
+        throw new Error(MESSAGES.STATS_ERROR);
       });
 
       // Execute the controller
@@ -425,7 +422,7 @@ describe('Stats Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
+      expect(res.json).toHaveBeenCalledWith({ error: MESSAGES.STATS_ERROR });
     });
   });
 
@@ -575,9 +572,8 @@ describe('Stats Controller', () => {
 
     test('should handle server errors', async () => {
       // Mock Sale.find to throw an error
-      const errorMessage = 'Database connection error';
       Sale.find = jest.fn().mockImplementation(() => {
-        throw new Error(errorMessage);
+        throw new Error(MESSAGES.STATS_ERROR);
       });
 
       // Execute the controller
@@ -585,7 +581,7 @@ describe('Stats Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: errorMessage });
+      expect(res.json).toHaveBeenCalledWith({ error: MESSAGES.STATS_ERROR });
     });
   });
 });

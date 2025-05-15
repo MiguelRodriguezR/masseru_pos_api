@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const purchaseController = require('../../../controllers/purchaseController');
 const Purchase = require('../../../models/Purchase');
 const Product = require('../../../models/Product');
+const { MESSAGES } = require('../../../config/messages');
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
   mockPurchase, 
@@ -169,7 +170,7 @@ describe('Purchase Controller', () => {
       // Assertions
       expect(Purchase.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Compra no encontrada' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PURCHASE_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -254,7 +255,7 @@ describe('Purchase Controller', () => {
       });
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Compra creada',
+        msg: MESSAGES.PURCHASE_CREATED,
         purchase: mockPurchaseInstance
       });
     });
@@ -275,7 +276,7 @@ describe('Purchase Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Debe incluir al menos un producto' });
+      expect(res.json).toHaveBeenCalledWith({ error: MESSAGES.MISSING_PRODUCTS });
     });
 
     test('should return 400 if item is missing required fields', async () => {
@@ -301,7 +302,7 @@ describe('Purchase Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Cada item debe tener product, quantity y purchasePrice' });
+      expect(res.json).toHaveBeenCalledWith({ error: MESSAGES.INVALID_PURCHASE_ITEMS });
     });
 
     test('should return 400 if product not found', async () => {
@@ -331,7 +332,7 @@ describe('Purchase Controller', () => {
       // Assertions
       expect(Product.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Producto no encontrado: nonexistent-id' });
+      expect(res.json).toHaveBeenCalledWith({ error: `${MESSAGES.PRODUCT_NOT_FOUND}: nonexistent-id` });
     });
 
     test('should handle server errors', async () => {
@@ -433,7 +434,7 @@ describe('Purchase Controller', () => {
       });
 
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Compra actualizada',
+        msg: MESSAGES.PURCHASE_UPDATED,
         purchase: expect.objectContaining({
           items: updateData.items,
           supplier: updateData.supplier,
@@ -477,7 +478,7 @@ describe('Purchase Controller', () => {
       expect(purchaseToUpdate.notes).toBe(updateData.notes);
       expect(purchaseToUpdate.save).toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Compra actualizada',
+        msg: MESSAGES.PURCHASE_UPDATED,
         purchase: expect.objectContaining({
           supplier: updateData.supplier,
           notes: updateData.notes
@@ -503,7 +504,7 @@ describe('Purchase Controller', () => {
       // Assertions
       expect(Purchase.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Compra no encontrada' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PURCHASE_NOT_FOUND });
     });
 
     test('should return 400 if items are invalid', async () => {
@@ -568,7 +569,7 @@ describe('Purchase Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Producto no encontrado: nonexistent-id' });
+      expect(res.json).toHaveBeenCalledWith({ error: `${MESSAGES.PRODUCT_NOT_FOUND}: nonexistent-id` });
     });
 
     test('should handle server errors', async () => {
@@ -612,7 +613,7 @@ describe('Purchase Controller', () => {
       // Assertions
       expect(Purchase.findById).toHaveBeenCalledWith(mockPurchase._id.toString());
       expect(Purchase.findByIdAndDelete).toHaveBeenCalledWith(mockPurchase._id.toString());
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Compra eliminada' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PURCHASE_DELETED });
     });
 
     test('should return 404 if purchase not found', async () => {
@@ -628,7 +629,7 @@ describe('Purchase Controller', () => {
       // Assertions
       expect(Purchase.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Compra no encontrada' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PURCHASE_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {

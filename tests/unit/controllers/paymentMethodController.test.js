@@ -10,6 +10,7 @@ const {
   mockPaymentMethodsList,
   mockActivePaymentMethodsList
 } = require('../../mocks/paymentMethodMock');
+const { MESSAGES } = require('../../../config/messages');
 
 // Mock the mongoose models
 jest.mock('../../../models/PaymentMethod');
@@ -58,7 +59,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(console.error).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Error al obtener los métodos de pago' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_GET_ERROR });
     });
   });
 
@@ -92,7 +93,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(console.error).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Error al obtener los métodos de pago activos' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_GET_ACTIVE_ERROR });
     });
   });
 
@@ -125,7 +126,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(PaymentMethod.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Método de pago no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -144,7 +145,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(console.error).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Error al obtener el método de pago' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_GET_SINGLE_ERROR });
     });
   });
 
@@ -202,7 +203,7 @@ describe('Payment Method Controller', () => {
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalled();
       // Instead of checking the exact object, verify the message
-      expect(res.json.mock.calls[0][0].msg).toBe('Método de pago creado exitosamente');
+      expect(res.json.mock.calls[0][0].msg).toBe(MESSAGES.PAYMENT_METHOD_CREATED);
     });
 
     test('should return 400 if payment method with same name or code already exists', async () => {
@@ -230,7 +231,7 @@ describe('Payment Method Controller', () => {
       });
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Ya existe un método de pago con ese nombre o código'
+        msg: MESSAGES.PAYMENT_METHOD_EXISTS
       });
     });
 
@@ -259,7 +260,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(console.error).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Error al crear el método de pago' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_CREATE_ERROR });
     });
   });
 
@@ -302,7 +303,7 @@ describe('Payment Method Controller', () => {
         $or: [{ name: updateData.name }, { code: updateData.code }]
       });
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Método de pago actualizado exitosamente',
+        msg: MESSAGES.PAYMENT_METHOD_UPDATED,
         paymentMethod: expect.objectContaining(updateData)
       });
     });
@@ -326,7 +327,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(PaymentMethod.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Método de pago no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_NOT_FOUND });
     });
 
     test('should return 400 if another payment method with same name or code exists', async () => {
@@ -356,7 +357,7 @@ describe('Payment Method Controller', () => {
       });
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({
-        msg: 'Ya existe otro método de pago con ese nombre o código'
+        msg: MESSAGES.PAYMENT_METHOD_EXISTS_OTHER
       });
     });
 
@@ -382,7 +383,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(console.error).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Error al actualizar el método de pago' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_UPDATE_ERROR });
     });
   });
 
@@ -403,7 +404,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(PaymentMethod.findById).toHaveBeenCalledWith(mockCashPaymentMethod._id.toString());
       expect(PaymentMethod.findByIdAndDelete).toHaveBeenCalledWith(mockCashPaymentMethod._id.toString());
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Método de pago eliminado exitosamente' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_DELETED });
     });
 
     test('should return 404 if payment method not found', async () => {
@@ -419,7 +420,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(PaymentMethod.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Método de pago no encontrado' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
@@ -438,7 +439,7 @@ describe('Payment Method Controller', () => {
       // Assertions
       expect(console.error).toHaveBeenCalled();
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Error al eliminar el método de pago' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.PAYMENT_METHOD_DELETE_ERROR });
     });
   });
 });

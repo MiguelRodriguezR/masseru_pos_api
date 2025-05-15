@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const saleController = require('../../../controllers/saleController');
 const Sale = require('../../../models/Sale');
 const Product = require('../../../models/Product');
+const { MESSAGES } = require('../../../config/messages');
 // Note: posSessionController import might be removed or changed below based on new mocking strategy
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
@@ -159,7 +160,7 @@ describe('Sale Controller', () => {
       );
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        msg: 'Venta creada',
+        msg: MESSAGES.SALE_CREATED,
         sale: expect.any(Object),
         addedToSession: true
       }));
@@ -442,7 +443,7 @@ describe('Sale Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Debe enviar al menos un producto' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.MISSING_ITEMS });
     });
 
     test('should return 400 if payment details are missing', async () => {
@@ -464,7 +465,7 @@ describe('Sale Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Debe enviar al menos un método de pago con su monto' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.MISSING_PAYMENTS });
     });
 
     test('should return 400 if payment method is missing', async () => {
@@ -492,7 +493,7 @@ describe('Sale Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Todos los pagos deben tener un método de pago válido' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.INVALID_PAYMENT_METHOD});
     });
 
     test('should return 400 if payment amount is invalid', async () => {
@@ -520,7 +521,7 @@ describe('Sale Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Todos los pagos deben tener un monto válido mayor a 0' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.INVALID_PAYMENT_AMOUNT });
     });
 
     test('should return 404 if product not found', async () => {
@@ -552,7 +553,7 @@ describe('Sale Controller', () => {
       // Assertions
       expect(Product.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Producto no encontrado: nonexistent-id' });
+      expect(res.json).toHaveBeenCalledWith({ msg: `${MESSAGES.PRODUCT_NOT_FOUND}: nonexistent-id` });
     });
 
     test('should return 400 if insufficient inventory', async () => {
@@ -719,7 +720,7 @@ describe('Sale Controller', () => {
 
       // Assertions
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'El monto total de pago es insuficiente para cubrir el total de la venta' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.INSUFFICIENT_PAYMENT });
     });
 
     test('should handle server errors', async () => {
@@ -945,7 +946,7 @@ describe('Sale Controller', () => {
       // Assertions
       expect(Sale.findById).toHaveBeenCalledWith('nonexistent-id');
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ msg: 'Venta no encontrada' });
+      expect(res.json).toHaveBeenCalledWith({ msg: MESSAGES.SALE_NOT_FOUND });
     });
 
     test('should handle server errors', async () => {
