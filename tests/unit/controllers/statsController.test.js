@@ -342,14 +342,7 @@ describe('Stats Controller', () => {
           totalAmount: 100,
           paymentDetails: [
             {
-              paymentMethod: {
-                _id: mockPaymentMethods.cash._id,
-                name: 'Efectivo',
-                code: 'CASH',
-                color: '#4CAF50',
-                icon: 'mdi-cash',
-                toString: () => mockPaymentMethods.cash._id.toString()
-              },
+              paymentMethod:mockPaymentMethods.cash,
               amount: 120
             }
           ]
@@ -359,14 +352,7 @@ describe('Stats Controller', () => {
           totalAmount: 150,
           paymentDetails: [
             {
-              paymentMethod: {
-                _id: mockPaymentMethods.card._id,
-                name: 'Tarjeta de crédito',
-                code: 'CARD',
-                color: '#2196F3',
-                icon: 'mdi-credit-card',
-                toString: () => mockPaymentMethods.card._id.toString()
-              },
+              paymentMethod: mockPaymentMethods.card,
               amount: 150
             }
           ]
@@ -474,14 +460,7 @@ describe('Stats Controller', () => {
           totalAmount: 100,
           paymentDetails: [
             {
-              paymentMethod: {
-                _id: mockPaymentMethods.cash._id,
-                name: 'Efectivo',
-                code: 'CASH',
-                color: '#4CAF50',
-                icon: 'mdi-cash',
-                toString: () => mockPaymentMethods.cash._id.toString()
-              },
+              paymentMethod: mockPaymentMethods.cash,
               amount: 120
             }
           ]
@@ -491,14 +470,7 @@ describe('Stats Controller', () => {
           totalAmount: 150,
           paymentDetails: [
             {
-              paymentMethod: {
-                _id: mockPaymentMethods.card._id,
-                name: 'Tarjeta de crédito',
-                code: 'CARD',
-                color: '#2196F3',
-                icon: 'mdi-credit-card',
-                toString: () => mockPaymentMethods.card._id.toString()
-              },
+              paymentMethod: mockPaymentMethods.card,
               amount: 150
             }
           ]
@@ -582,6 +554,202 @@ describe('Stats Controller', () => {
       // Assertions
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: MESSAGES.STATS_ERROR });
+    });
+  });
+
+  describe('getPosSessionStatsData payment method calculations', () => {
+    test('should correctly calculate payment method totalAmount values', async () => {
+      // Mock query parameters
+      const startDate = '2023-01-01';
+      const endDate = '2023-01-31';
+      req = mockRequest({}, {}, {}, { startDate, endDate });
+
+      // Mock PosSession.find to return sessions
+      PosSession.find = jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue(mockPosSessionsList)
+      });
+
+      // Create mock sales with different payment scenarios
+      const mockSales = [
+        // Cash sale with change
+        {
+          totalAmount: 100,
+          changeAmount: 20, // Customer paid 120, got 20 change
+          paymentDetails: [
+            {
+              paymentMethod: mockPaymentMethods.cash,
+              amount: 120 // Amount given by customer
+            }
+          ]
+        },
+        // Card sale (no change)
+        {
+          totalAmount: 150,
+          changeAmount: 0,
+          paymentDetails: [
+            {
+              paymentMethod: mockPaymentMethods.card,
+              amount: 150
+            }
+          ]
+        },
+        // Mixed payment sale
+        {
+          totalAmount: 200,
+          changeAmount: 10, // Customer paid 210 in cash, got 10 change
+          paymentDetails: [
+            {
+              paymentMethod: mockPaymentMethods.cash,
+              amount: 110 // Cash portion
+            },
+            {
+              paymentMethod: mockPaymentMethods.card,
+              amount: 100 // Card portion
+            }
+          ]
+        }
+      ];
+
+      // Mock Sale.find for getDashboardStats
+      Sale.find = jest.fn()
+        .mockReturnValueOnce({
+          populate: jest.fn().mockResolvedValue([]) // For getSalesStatsData
+        })
+        .mockReturnValueOnce({
+          populate: jest.fn().mockResolvedValue([]) // For getProductStatsData
+        })
+        .mockReturnValueOnce(Promise.resolve([])) // For getCustomerStatsData
+        .mockReturnValueOnce({
+          populate: jest.fn().mockResolvedValue(mockSales) // For getPosSessionStatsData
+        });
+
+      // Execute the controller
+      await statsController.getDashboardStats(req, res);
+
+      // Get the posSessionStats from the response
+      const response = res.json.mock.calls[0][0];
+      const posSessionStats = response.posSessionStats;
+
+      // Verify payment methods array exists
+      expect(posSessionStats.paymentMethods).toBeDefined();
+      expect(Array.isArray(posSessionStats.paymentMethods)).toBe(true);
+
+      // Find the cash and card payment methods in the response
+      const cashPaymentMethod = posSessionStats.paymentMethods.find(pm => pm.code === 'CASH');
+      const cardPaymentMethod = posSessionStats.paymentMethods.find(pm => pm.code === 'CARD');
+
+      // Verify both payment methods exist
+      expect(cashPaymentMethod).toBeDefined();
+      expect(cardPaymentMethod).toBeDefined();
+
+      // Calculate expected values
+      // Cash: 120 (first sale) - 20 (change from first sale) + 110 (mixed sale) - 10 (change from mixed sale) = 200
+      // Card: 150 (second sale) + 100 (mixed sale) = 250
+      const expectedCashTotal = 200;
+      const expectedCardTotal = 250;
+
+      // Verify the totalAmount values are calculated correctly
+      expect(cashPaymentMethod.totalAmount).toBe(expectedCashTotal);
+      expect(cardPaymentMethod.totalAmount).toBe(expectedCardTotal);
+
+      // Verify the count values are correct
+      // Cash appears in 2 sales, Card appears in 2 sales
+      expect(cashPaymentMethod.count).toBe(2);
+      expect(cardPaymentMethod.count).toBe(2);
+    });
+
+    test('should handle edge cases in payment method calculations', async () => {
+      // Mock query parameters
+      const startDate = '2023-01-01';
+      const endDate = '2023-01-31';
+      req = mockRequest({}, {}, {}, { startDate, endDate });
+
+      // Mock PosSession.find to return sessions
+      PosSession.find = jest.fn().mockReturnValue({
+        populate: jest.fn().mockResolvedValue([])
+      });
+
+      // Create mock sales with edge cases
+      const mockSales = [
+        // Edge case 1: Zero amount sale
+        {
+          totalAmount: 0,
+          changeAmount: 0,
+          paymentDetails: [
+            {
+              paymentMethod: mockPaymentMethods.cash,
+              amount: 0
+            }
+          ]
+        },
+        // Edge case 2: Sale with missing payment method
+        {
+          totalAmount: 50,
+          changeAmount: 0,
+          paymentDetails: [
+            {
+              paymentMethod: null, // Missing payment method
+              amount: 50
+            }
+          ]
+        },
+        // Edge case 3: Sale with large change amount (more than payment)
+        {
+          totalAmount: 30,
+          changeAmount: 40, // More change than the payment amount (unusual but testing edge case)
+          paymentDetails: [
+            {
+              paymentMethod: mockPaymentMethods.cash,
+              amount: 70
+            }
+          ]
+        }
+      ];
+
+      // Mock Sale.find for getDashboardStats
+      Sale.find = jest.fn()
+        .mockReturnValueOnce({
+          populate: jest.fn().mockResolvedValue([]) // For getSalesStatsData
+        })
+        .mockReturnValueOnce({
+          populate: jest.fn().mockResolvedValue([]) // For getProductStatsData
+        })
+        .mockReturnValueOnce(Promise.resolve([])) // For getCustomerStatsData
+        .mockReturnValueOnce({
+          populate: jest.fn().mockResolvedValue(mockSales) // For getPosSessionStatsData
+        });
+
+      // Execute the controller
+      await statsController.getDashboardStats(req, res);
+
+      // Get the posSessionStats from the response
+      const response = res.json.mock.calls[0][0];
+      const posSessionStats = response.posSessionStats;
+
+      // Verify payment methods array exists
+      expect(posSessionStats.paymentMethods).toBeDefined();
+      expect(Array.isArray(posSessionStats.paymentMethods)).toBe(true);
+
+      // Find the cash payment method in the response
+      const cashPaymentMethod = posSessionStats.paymentMethods.find(pm => pm.code === 'CASH');
+
+      // Verify cash payment method exists
+      expect(cashPaymentMethod).toBeDefined();
+
+      // Calculate expected values
+      // Cash: 0 (first sale) + 70 (third sale) - 40 (change from third sale) = 30
+      const expectedCashTotal = 30;
+
+      // Verify the totalAmount value is calculated correctly
+      expect(cashPaymentMethod.totalAmount).toBe(expectedCashTotal);
+
+      // Verify the count value is correct
+      // Cash appears in 2 sales (first and third)
+      expect(cashPaymentMethod.count).toBe(2);
+
+      // Verify the total sales amount is correct
+      // Total: 0 (first sale) + 50 (second sale) + 30 (third sale) = 80
+      expect(posSessionStats.totalSales).toBe(80);
     });
   });
 });

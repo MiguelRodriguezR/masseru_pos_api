@@ -177,7 +177,7 @@ exports.getCustomerStats = async (req, res) => {
 };
 
 /**
- * Get POS session statistics
+ * Get POS session statistics TODO: SEEMS TO BE DUPLICATED; USED WHEN FILTERED; NOT SEEMS TO BE USED IN FRONTEND
  */
 exports.getPosSessionStats = async (req, res) => {
   try {
@@ -205,7 +205,6 @@ exports.getPosSessionStats = async (req, res) => {
     }
     
     const sales = await Sale.find(saleFilter).populate('paymentDetails.paymentMethod');
-    
     // Calculate sales by payment method
     const paymentMethodStats = {};
     let totalSalesAmount = 0;
@@ -233,6 +232,11 @@ exports.getPosSessionStats = async (req, res) => {
         }
         
         paymentMethodStats[methodId].totalAmount += paymentAmount;
+        // console.log(paymentDetail.paymentMethod)
+        // console.log(sale)
+        if(paymentDetail.paymentMethod.code == "CASH"){
+          paymentMethodStats[methodId].totalAmount -= sale.changeAmount;
+        }
         paymentMethodStats[methodId].count += 1;
       });
     });
@@ -464,6 +468,10 @@ async function getPosSessionStatsData(startDate, endDate) {
           totalAmount: 0,
           count: 0
         };
+      }
+
+      if(paymentDetail.paymentMethod.code == "CASH"){
+        paymentMethodStats[methodId].totalAmount -= sale.changeAmount;
       }
       
       paymentMethodStats[methodId].totalAmount += paymentAmount;
