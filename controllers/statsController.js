@@ -2,6 +2,7 @@
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
 const PosSession = require('../models/PosSession');
+const OperationalExpense = require('../models/OperationalExpense');
 const { MESSAGES } = require('../config/messages');
 
 /**
@@ -132,6 +133,44 @@ async function getPosSessionStatsData({ startDate, endDate }) {
   };
 }
 
+async function getOperationalExpenseStatsData({ startDate, endDate }) {
+  const filter = buildDateFilter({ startDate, endDate }, 'date');
+  const expenses = await OperationalExpense.find(filter);
+  
+  const totalAmount = expenses.reduce((sum, exp) => sum + exp.totalAmount, 0);
+  
+  // Group expenses by date for charting
+  const expensesByDate = {};
+  expenses.forEach(exp => {
+    const dateKey = exp.date.toISOString().split('T')[0];
+    if (!expensesByDate[dateKey]) {
+      expensesByDate[dateKey] = { date: dateKey, count: 0, amount: 0 };
+    }
+    expensesByDate[dateKey].count += 1;
+    expensesByDate[dateKey].amount += exp.totalAmount;
+  });
+  
+  // Get top 5 expense reasons by total amount
+  const reasonsMap = {};
+  expenses.forEach(exp => {
+    if (!reasonsMap[exp.reason]) {
+      reasonsMap[exp.reason] = { reason: exp.reason, count: 0, amount: 0 };
+    }
+    reasonsMap[exp.reason].count += 1;
+    reasonsMap[exp.reason].amount += exp.totalAmount;
+  });
+  const topReasons = Object.values(reasonsMap)
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, 5);
+  
+  return {
+    totalExpenses: expenses.length,
+    totalAmount,
+    expensesByDate: Object.values(expensesByDate).sort((a, b) => a.date.localeCompare(b.date)),
+    topReasons
+  };
+}
+
 // Controllers
 exports.getSalesStats = async (req, res) => {
   try {
@@ -169,6 +208,15 @@ exports.getPosSessionStats = async (req, res) => {
   }
 };
 
+exports.getOperationalExpensesStats = async (req, res) => {
+  try {
+    const stats = await getOperationalExpenseStatsData(req.query);
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: MESSAGES.STATS_ERROR });
+  }
+};
+
 exports.getDashboardStats = async (req, res) => {
   try {
     const params = {
@@ -176,13 +224,14 @@ exports.getDashboardStats = async (req, res) => {
       endDate: req.query.endDate,
       productId: req.query.productId
     };
-    const [salesStats, productStats, customerStats, posSessionStats] = await Promise.all([
+    const [salesStats, productStats, customerStats, posSessionStats, operationalExpenseStats] = await Promise.all([
       getSalesStatsData(params),
       getProductStatsData(params),
       getCustomerStatsData(params),
-      getPosSessionStatsData(params)
+      getPosSessionStatsData(params),
+      getOperationalExpenseStatsData(params)
     ]);
-    res.json({ salesStats, productStats, customerStats, posSessionStats });
+    res.json({ salesStats, productStats, customerStats, posSessionStats, operationalExpenseStats });
   } catch (error) {
     res.status(500).json({ error: MESSAGES.STATS_ERROR });
   }

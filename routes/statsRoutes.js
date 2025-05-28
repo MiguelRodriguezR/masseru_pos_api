@@ -7,6 +7,7 @@ const {
   getProductStats, 
   getCustomerStats, 
   getPosSessionStats,
+  getOperationalExpensesStats,
   getDashboardStats
 } = require('../controllers/statsController');
 
@@ -17,6 +18,7 @@ router.get('/sales', getSalesStats);
 router.get('/products', getProductStats);
 router.get('/customers', getCustomerStats);
 router.get('/pos-sessions', getPosSessionStats);
+router.get('/operational-expenses', getOperationalExpensesStats);
 
 // Combined dashboard stats endpoint
 router.get('/dashboard', getDashboardStats);
