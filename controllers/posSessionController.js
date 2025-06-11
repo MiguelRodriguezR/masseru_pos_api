@@ -402,3 +402,84 @@ exports.addSaleToSession = async (saleId, userId) => {
     return false;
   }
 };
+
+// Update session totals from an updated sale (without adding to sales array)
+exports.updateSessionFromSale = async (sessionId, saleId) => {
+  try {
+    // Find the session by ID
+    const session = await PosSession.findById(sessionId);
+    
+    if (!session) {
+      console.error('Sesión no encontrada');
+      return false;
+    }
+    
+    // Get the sale details with payment details
+    const sale = await Sale.findById(saleId).populate('paymentDetails.paymentMethod');
+    
+    if (!sale) {
+      console.error('Venta no encontrada');
+      return false;
+    }
+    
+    // Recalculate payment totals
+    let paymentTotals = [];
+    let totalSales = 0;
+    let expectedCash = session.initialCash || 0;
+    let expectedNonCash = 0;
+    
+    // Get all sales in session to recalculate totals
+    const sessionSales = await Sale.find({ _id: { $in: session.sales } })
+      .populate('paymentDetails.paymentMethod');
+    
+    // Process each sale in session (including the updated one)
+    for (const sessionSale of sessionSales) {
+      totalSales += sessionSale.totalAmount;
+      
+      for (const paymentDetail of sessionSale.paymentDetails) {
+        const paymentMethod = paymentDetail.paymentMethod;
+        const paymentAmount = paymentDetail.amount;
+        
+        if (!paymentMethod) continue;
+        
+        // Find if this payment method is already in our totals
+        const paymentMethodId = paymentMethod._id.toString();
+        let paymentTotal = paymentTotals.find(pt => 
+          pt.paymentMethod && pt.paymentMethod.toString() === paymentMethodId
+        );
+        
+        // If not found, create a new entry
+        if (!paymentTotal) {
+          paymentTotals.push({
+            paymentMethod: paymentMethod._id,
+            total: paymentAmount
+          });
+        } else {
+          // Update existing total
+          paymentTotal.total += paymentAmount;
+        }
+        
+        // Update expected cash if this is a cash payment, otherwise update expected non-cash
+        if (paymentMethod.code === 'CASH') {
+          expectedCash += paymentAmount - sessionSale.changeAmount;
+        } else {
+          expectedNonCash += paymentAmount;
+        }
+      }
+    }
+    
+    // Update session totals
+    session.paymentTotals = paymentTotals;
+    session.totalSales = totalSales;
+    session.expectedCash = expectedCash;
+    session.expectedNonCash = expectedNonCash;
+    
+    await session.save();
+    return true;
+  } catch (error) {
+    console.error('Error al actualizar sesión desde venta:', error);
+    return false;
+  }
+};
+
+// Add a sale to the current open session

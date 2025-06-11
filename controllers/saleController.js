@@ -1,7 +1,8 @@
 // controllers/saleController.js
 const Sale = require('../models/Sale');
 const Product = require('../models/Product');
-const { addSaleToSession } = require('./posSessionController');
+const { addSaleToSession, updateSessionFromSale } = require('./posSessionController');
+const PosSession = require('../models/PosSession');
 
 exports.createSale = async (req, res) => {
   try {
@@ -94,6 +95,10 @@ exports.createSale = async (req, res) => {
     
     // Calcular el cambio
     const changeAmount = totalPaymentAmount - totalAmount;
+    const saleSession = await PosSession.findOne({ 
+          user: req.user.id, 
+          status: 'open' 
+        });
 
     const sale = new Sale({
       user: req.user.id,
@@ -102,7 +107,8 @@ exports.createSale = async (req, res) => {
       paymentDetails,
       totalPaymentAmount,
       changeAmount,
-      saleDate: new Date()
+      saleDate: new Date(),
+      saleSession
     });
 
     await sale.save();
@@ -291,6 +297,159 @@ exports.getSaleById = async (req, res) => {
     if(!sale) return res.status(404).json({ msg: 'Venta no encontrada' });
     
     res.json(sale);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+exports.updateSale = async (req, res) => {
+  try {
+    const { items, paymentDetails } = req.body;
+    const saleId = req.params.id;
+
+    // Validar que la venta exista
+    const existingSale = await Sale.findById(saleId)
+      .populate('items.product', 'quantity variants');
+    
+    if(!existingSale) {
+      return res.status(404).json({ msg: 'Venta no encontrada' });
+    }
+
+    // Validar items si se proporcionan
+    if(items && Array.isArray(items)) {
+      // Revertir cantidades de productos originales
+      for(const item of existingSale.items) {
+        const product = await Product.findById(item.product._id);
+        if(product) {
+          // Revertir cantidad general
+          product.quantity += item.quantity;
+          
+          // Revertir cantidad de variante si existe
+          if(item.variant && product.variants && product.variants.length > 0) {
+            const variantIndex = product.variants.findIndex(v => {
+              let match = true;
+              for(let key in item.variant) {
+                if(v[key] !== item.variant[key]) match = false;
+              }
+              return match;
+            });
+            
+            if(variantIndex !== -1) {
+              product.variants[variantIndex].quantity += item.quantity;
+            }
+          }
+          await product.save();
+        }
+      }
+
+      // Validar y aplicar nuevos items
+      let totalAmount = 0;
+      const newSaleItems = [];
+
+      for(const item of items) {
+        const product = await Product.findById(item.productId);
+        if(!product) {
+          return res.status(404).json({ msg: `Producto no encontrado: ${item.productId}` });
+        }
+
+        // Validar inventario
+        if(product.quantity < item.quantity) {
+          return res.status(400).json({ msg: `Inventario insuficiente para el producto ${product.name}` });
+        }
+
+        // Validar variante si existe
+        if(item.variant && product.variants && product.variants.length > 0) {
+          const variantIndex = product.variants.findIndex(v => {
+            let match = true;
+            for(let key in item.variant) {
+              if(v[key] !== item.variant[key]) match = false;
+            }
+            return match;
+          });
+
+          if(variantIndex === -1) {
+            return res.status(400).json({ msg: `Variante no encontrada para el producto ${product.name}` });
+          }
+          if(product.variants[variantIndex].quantity < item.quantity) {
+            return res.status(400).json({ msg: `Inventario insuficiente para la variante del producto ${product.name}` });
+          }
+          // Descontar cantidad de la variante
+          product.variants[variantIndex].quantity -= item.quantity;
+        }
+
+        // Descontar cantidad general
+        product.quantity -= item.quantity;
+        await product.save();
+
+        // Calcular descuentos
+        let totalDiscount = 0;
+        if(item.discounts && item.discounts.length > 0) {
+          totalDiscount = item.discounts.reduce((total, discount) => {
+            if(discount.type === 'percentage') {
+              return total + (product.salePrice * discount.value / 100);
+            } else if(discount.type === 'fixed') {
+              return total + discount.value;
+            }
+            return total;
+          }, 0);
+        }
+
+        const productSalePrice = product.salePrice - totalDiscount;
+        const itemTotal = productSalePrice * item.quantity;
+        totalAmount += itemTotal;
+
+        newSaleItems.push({
+          product: product._id,
+          quantity: item.quantity,
+          variant: item.variant || null,
+          salePrice: productSalePrice,
+          discounts: item.discounts,
+        });
+      }
+
+      existingSale.items = newSaleItems;
+      existingSale.totalAmount = totalAmount;
+    }
+
+    // Validar y actualizar paymentDetails si se proporcionan
+    if(paymentDetails && Array.isArray(paymentDetails)) {
+      // Validar cada detalle de pago
+      for(const payment of paymentDetails) {
+        if(!payment.paymentMethod) {
+          return res.status(400).json({ msg: 'Todos los pagos deben tener un método de pago válido' });
+        }
+        if(!payment.amount || payment.amount <= 0) {
+          return res.status(400).json({ msg: 'Todos los pagos deben tener un monto válido mayor a 0' });
+        }
+      }
+
+      const totalPaymentAmount = paymentDetails.reduce((sum, payment) => sum + payment.amount, 0);
+      
+      // Validar que el pago cubra el total
+      if(totalPaymentAmount < existingSale.totalAmount) {
+        return res.status(400).json({ msg: 'El monto total de pago es insuficiente para cubrir el total de la venta' });
+      }
+
+      existingSale.paymentDetails = paymentDetails;
+      existingSale.totalPaymentAmount = totalPaymentAmount;
+      existingSale.changeAmount = totalPaymentAmount - existingSale.totalAmount;
+    }
+
+    // Actualizar fecha de modificación
+    existingSale.updatedAt = new Date();
+
+    const updatedSale = await existingSale.save();
+
+    // Actualizar valores en sesión POS si es necesario
+    if((items || paymentDetails) && updatedSale.saleSession) {
+      await updateSessionFromSale(updatedSale.saleSession, updatedSale._id);
+    }
+
+    res.json({
+      msg: 'Venta actualizada correctamente',
+      sale: updatedSale
+    });
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

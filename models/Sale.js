@@ -25,7 +25,8 @@ const saleSchema = new mongoose.Schema({
   paymentDetails: [paymentDetailSchema],
   totalPaymentAmount: { type: Number, required: true },
   changeAmount: { type: Number, required: true },
-  saleDate: { type: Date, default: Date.now }
+  saleDate: { type: Date, default: Date.now },
+  saleSession: {type: mongoose.Schema.Types.ObjectId, ref: 'PosSession', required: false}
 }, { timestamps: true });
 
 module.exports = mongoose.model('Sale', saleSchema);

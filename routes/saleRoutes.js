@@ -2,11 +2,13 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middlewares/authMiddleware');
-const { createSale, getSales, getSaleById } = require('../controllers/saleController');
+const role = require('../middlewares/roleMiddleware');
+const { createSale, getSales, getSaleById, updateSale } = require('../controllers/saleController');
 const validate = require('../middlewares/validationMiddleware');
 
 router.use(auth);
 router.post('/', validate(['items', 'paymentDetails']), createSale);
+router.put('/:id', role(['admin']), validate(['items', 'paymentDetails']), updateSale);
 router.get('/', getSales);
 router.get('/:id', getSaleById);
 
