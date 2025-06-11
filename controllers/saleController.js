@@ -310,9 +310,15 @@ exports.updateSale = async (req, res) => {
     // Validar que la venta exista
     const existingSale = await Sale.findById(saleId)
       .populate('items.product', 'quantity variants');
+
+    const existingSession = existingSale.saleSession;
     
     if(!existingSale) {
       return res.status(404).json({ msg: 'Venta no encontrada' });
+    }
+
+    if(!existingSession) {
+      return res.status(404).json({ msg: 'Session POS no encontrada' });
     }
 
     // Validar items si se proporcionan
