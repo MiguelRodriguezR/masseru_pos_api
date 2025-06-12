@@ -67,4 +67,6 @@ const posSessionSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('PosSession', posSessionSchema);
+const PosSession = mongoose.model('PosSession', posSessionSchema);
+PosSession.getModel = (conn) => conn.model('PosSession', posSessionSchema);
+module.exports = PosSession;

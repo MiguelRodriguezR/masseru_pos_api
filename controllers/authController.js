@@ -1,11 +1,12 @@
 // controllers/authController.js
-const User = require('../models/User');
+const UserModel = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { secret, expiresIn } = require('../config/jwt');
 
 exports.register = async (req, res) => {
   try {
+    const User = UserModel.getModel(req.db);
     const { name, email, password, role } = req.body;
     const existingUser = await User.findOne({ email });
     if(existingUser) return res.status(400).json({ msg: 'Usuario ya existe' });
@@ -15,7 +16,7 @@ exports.register = async (req, res) => {
     const isFirstUser = userCount === 0;
     
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ 
+    const user = new User({
       name, 
       email, 
       password: hashedPassword, 
@@ -38,6 +39,7 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
+    const User = UserModel.getModel(req.db);
     const { email, password } = req.body;
     const user = await User.findOne({ email });
     if(!user) return res.status(400).json({ msg: 'Credenciales inválidas' });

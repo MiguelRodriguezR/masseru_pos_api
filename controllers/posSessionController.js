@@ -1,12 +1,13 @@
 // controllers/posSessionController.js
-const PosSession = require('../models/PosSession');
-const Sale = require('../models/Sale');
+const PosSessionModel = require('../models/PosSession');
+const SaleModel = require('../models/Sale');
 
 // Create a new POS session (open cash register)
 exports.openSession = async (req, res) => {
   try {
+    const PosSession = PosSessionModel.getModel(req.db);
     // Check if there's already an open session for this user
-    const existingOpenSession = await PosSession.findOne({ 
+    const existingOpenSession = await PosSession.findOne({
       user: req.user.id, 
       status: 'open' 
     });
@@ -46,6 +47,8 @@ exports.openSession = async (req, res) => {
 // Close a POS session
 exports.closeSession = async (req, res) => {
   try {
+    const PosSession = PosSessionModel.getModel(req.db);
+    const Sale = SaleModel.getModel(req.db);
     const { sessionId, actualCash, notes } = req.body;
 
     if (!sessionId) {
@@ -154,6 +157,7 @@ exports.closeSession = async (req, res) => {
 // Get the currently open session for a specific user
 exports.getUserOpenSession = async (req, res) => {
   try {
+    const PosSession = PosSessionModel.getModel(req.db);
     const userId = req.params.userId;
     
     if (!userId) {
@@ -187,6 +191,7 @@ exports.getUserOpenSession = async (req, res) => {
 // Get all POS sessions with pagination and filtering
 exports.getSessions = async (req, res) => {
   try {
+    const PosSession = PosSessionModel.getModel(req.db);
     // Pagination parameters
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -253,6 +258,7 @@ exports.getSessions = async (req, res) => {
 // Get a specific POS session by ID with detailed sales information
 exports.getSessionById = async (req, res) => {
   try {
+    const PosSession = PosSessionModel.getModel(req.db);
     const session = await PosSession.findById(req.params.id)
       .populate('user', 'name email')
       .populate('paymentTotals.paymentMethod', 'name code color icon')
@@ -288,6 +294,7 @@ exports.getSessionById = async (req, res) => {
 // Update a POS session
 exports.updateSession = async (req, res) => {
   try {
+    const PosSession = PosSessionModel.getModel(req.db);
     const { notes } = req.body;
     const session = await PosSession.findById(req.params.id);
     
@@ -324,12 +331,19 @@ exports.updateSession = async (req, res) => {
 };
 
 // Add a sale to the current open session
-exports.addSaleToSession = async (saleId, userId) => {
+exports.addSaleToSession = async (db, saleId, userId) => {
+  if (userId === undefined) {
+    userId = saleId;
+    saleId = db;
+    db = require('mongoose').connection;
+  }
   try {
+    const PosSession = PosSessionModel.getModel(db);
+    const Sale = SaleModel.getModel(db);
     // Find the open session for this user
-    const openSession = await PosSession.findOne({ 
-      user: userId, 
-      status: 'open' 
+    const openSession = await PosSession.findOne({
+      user: userId,
+      status: 'open'
     });
     
     if (!openSession) {
@@ -404,8 +418,15 @@ exports.addSaleToSession = async (saleId, userId) => {
 };
 
 // Update session totals from an updated sale (without adding to sales array)
-exports.updateSessionFromSale = async (sessionId, saleId) => {
+exports.updateSessionFromSale = async (db, sessionId, saleId) => {
+  if (saleId === undefined) {
+    saleId = sessionId;
+    sessionId = db;
+    db = require('mongoose').connection;
+  }
   try {
+    const PosSession = PosSessionModel.getModel(db);
+    const Sale = SaleModel.getModel(db);
     // Find the session by ID
     const session = await PosSession.findById(sessionId);
     

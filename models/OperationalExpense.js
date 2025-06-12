@@ -27,4 +27,6 @@ const operationalExpenseSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('OperationalExpense', operationalExpenseSchema);
+const OperationalExpense = mongoose.model('OperationalExpense', operationalExpenseSchema);
+OperationalExpense.getModel = (conn) => conn.model('OperationalExpense', operationalExpenseSchema);
+module.exports = OperationalExpense;

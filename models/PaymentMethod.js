@@ -33,4 +33,6 @@ const paymentMethodSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('PaymentMethod', paymentMethodSchema);
+const PaymentMethod = mongoose.model('PaymentMethod', paymentMethodSchema);
+PaymentMethod.getModel = (conn) => conn.model('PaymentMethod', paymentMethodSchema);
+module.exports = PaymentMethod;

@@ -29,4 +29,6 @@ const saleSchema = new mongoose.Schema({
   saleSession: {type: mongoose.Schema.Types.ObjectId, ref: 'PosSession', required: false}
 }, { timestamps: true });
 
-module.exports = mongoose.model('Sale', saleSchema);
+const Sale = mongoose.model('Sale', saleSchema);
+Sale.getModel = (conn) => conn.model('Sale', saleSchema);
+module.exports = Sale;

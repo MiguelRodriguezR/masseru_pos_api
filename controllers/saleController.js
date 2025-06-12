@@ -1,11 +1,14 @@
 // controllers/saleController.js
-const Sale = require('../models/Sale');
-const Product = require('../models/Product');
+const SaleModel = require('../models/Sale');
+const ProductModel = require('../models/Product');
 const { addSaleToSession, updateSessionFromSale } = require('./posSessionController');
-const PosSession = require('../models/PosSession');
+const PosSessionModel = require('../models/PosSession');
 
 exports.createSale = async (req, res) => {
   try {
+    const Sale = SaleModel.getModel(req.db);
+    const Product = ProductModel.getModel(req.db);
+    const PosSession = PosSessionModel.getModel(req.db);
     const { items, paymentDetails } = req.body; // items: [{ productId, quantity, variant (opcional) }], paymentDetails: [{ paymentMethod, amount }]
     if(!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ msg: 'Debe enviar al menos un producto' });
@@ -114,7 +117,7 @@ exports.createSale = async (req, res) => {
     await sale.save();
     
     // Add the sale to the current open POS session
-    const addedToSession = await addSaleToSession(sale._id, req.user.id);
+    const addedToSession = await addSaleToSession(req.db, sale._id, req.user.id);
     
     res.status(201).json({ 
       msg: 'Venta creada', 
@@ -128,6 +131,7 @@ exports.createSale = async (req, res) => {
 
 exports.getSales = async (req, res) => {
   try {
+    const Sale = SaleModel.getModel(req.db);
     // Parámetros de paginación
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -289,6 +293,7 @@ exports.getSales = async (req, res) => {
 
 exports.getSaleById = async (req, res) => {
   try {
+    const Sale = SaleModel.getModel(req.db);
     const sale = await Sale.findById(req.params.id)
       .populate('user', 'name email')
       .populate('items.product', 'name salePrice barcode description images')
@@ -304,6 +309,9 @@ exports.getSaleById = async (req, res) => {
 
 exports.updateSale = async (req, res) => {
   try {
+    const Sale = SaleModel.getModel(req.db);
+    const Product = ProductModel.getModel(req.db);
+    const PosSession = PosSessionModel.getModel(req.db);
     const { items, paymentDetails } = req.body;
     const saleId = req.params.id;
 
@@ -448,7 +456,7 @@ exports.updateSale = async (req, res) => {
 
     // Actualizar valores en sesión POS si es necesario
     if((items || paymentDetails) && updatedSale.saleSession) {
-      await updateSessionFromSale(updatedSale.saleSession, updatedSale._id);
+      await updateSessionFromSale(req.db, updatedSale.saleSession, updatedSale._id);
     }
 
     res.json({

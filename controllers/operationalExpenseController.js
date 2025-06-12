@@ -1,8 +1,9 @@
 // controllers/operationalExpenseController.js
-const OperationalExpense = require('../models/OperationalExpense');
+const OperationalExpenseModel = require('../models/OperationalExpense');
 
 exports.getOperationalExpenses = async (req, res) => {
   try {
+    const OperationalExpense = OperationalExpenseModel.getModel(req.db);
     // Pagination parameters
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -51,6 +52,7 @@ exports.getOperationalExpenses = async (req, res) => {
 
 exports.getOperationalExpenseById = async (req, res) => {
   try {
+    const OperationalExpense = OperationalExpenseModel.getModel(req.db);
     const operationalExpense = await OperationalExpense.findById(req.params.id)
       .populate('createdBy', 'name');
       
@@ -63,6 +65,7 @@ exports.getOperationalExpenseById = async (req, res) => {
 
 exports.createOperationalExpense = async (req, res) => {
   try {
+    const OperationalExpense = OperationalExpenseModel.getModel(req.db);
     const { reason, totalAmount, notes, date } = req.body;
     
     // Validate required fields
@@ -87,6 +90,7 @@ exports.createOperationalExpense = async (req, res) => {
 
 exports.updateOperationalExpense = async (req, res) => {
   try {
+    const OperationalExpense = OperationalExpenseModel.getModel(req.db);
     const { reason, totalAmount, notes, date } = req.body;
     
     const operationalExpense = await OperationalExpense.findById(req.params.id);
@@ -106,6 +110,7 @@ exports.updateOperationalExpense = async (req, res) => {
 
 exports.deleteOperationalExpense = async (req, res) => {
   try {
+    const OperationalExpense = OperationalExpenseModel.getModel(req.db);
     const operationalExpense = await OperationalExpense.findById(req.params.id);
     
     if (!operationalExpense) return res.status(404).json({ msg: 'Gasto operativo no encontrado' });
