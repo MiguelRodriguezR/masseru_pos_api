@@ -39,7 +39,7 @@ describe('Stats Controller', () => {
     res = mockResponse();
     req = mockRequest();
     // THIS NEEDS TO BE ADDED AS A MOCK IN THE MOCKS FOLDER
-    //OperationalExpense.find = jest.fn().mockResolvedValue([]);
+    OperationalExpense.find = jest.fn().mockResolvedValue([]);
   });
 
   afterEach(() => {
