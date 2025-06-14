@@ -4,6 +4,7 @@ const statsController = require('../../../controllers/statsController');
 const Sale = require('../../../models/Sale');
 const Product = require('../../../models/Product');
 const PosSession = require('../../../models/PosSession');
+const OperationalExpense = require('../../../models/OperationalExpense');
 const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { MESSAGES } = require('../../../config/messages');
 const { 
@@ -28,6 +29,7 @@ const {
 jest.mock('../../../models/Sale');
 jest.mock('../../../models/Product');
 jest.mock('../../../models/PosSession');
+jest.mock('../../../models/OperationalExpense');
 
 describe('Stats Controller', () => {
   let req, res;
@@ -36,6 +38,7 @@ describe('Stats Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    OperationalExpense.find = jest.fn().mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -514,7 +517,7 @@ describe('Stats Controller', () => {
       await statsController.getDashboardStats(req, res);
 
       // Assertions
-      expect(res.json).toHaveBeenCalledWith({
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
         salesStats: expect.objectContaining({
           totalSales: expect.any(Number),
           totalProfit: expect.any(Number),
@@ -538,8 +541,14 @@ describe('Stats Controller', () => {
           activeSessions: expect.any(Number),
           totalSales: expect.any(Number),
           paymentMethods: expect.any(Array)
+        }),
+        operationalExpenseStats: expect.objectContaining({
+          totalExpenses: expect.any(Number),
+          totalAmount: expect.any(Number),
+          expensesByDate: expect.any(Array),
+          topReasons: expect.any(Array)
         })
-      });
+      }));
     });
 
     test('should handle server errors', async () => {
