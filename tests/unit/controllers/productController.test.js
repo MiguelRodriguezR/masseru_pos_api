@@ -5,7 +5,6 @@ const path = require('path');
 const { MESSAGES } = require('../../../config/messages');
 const productController = require('../../../controllers/productController');
 const Product = require('../../../models/Product');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
   mockProduct, 
   mockProductWithVariants, 
@@ -19,17 +18,6 @@ jest.mock('fs');
 jest.mock('path');
 
 describe('Product Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('createProduct', () => {
     test('should create a product successfully with JSON data', async () => {

@@ -5,7 +5,6 @@ const Sale = require('../../../models/Sale');
 const Product = require('../../../models/Product');
 const PosSession = require('../../../models/PosSession');
 const OperationalExpense = require('../../../models/OperationalExpense');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { MESSAGES } = require('../../../config/messages');
 const { 
   mockCashSale, 
@@ -32,18 +31,9 @@ jest.mock('../../../models/PosSession');
 jest.mock('../../../models/OperationalExpense');
 
 describe('Stats Controller', () => {
-  let req, res;
-
   beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
     // THIS NEEDS TO BE ADDED AS A MOCK IN THE MOCKS FOLDER
     OperationalExpense.find = jest.fn().mockResolvedValue([]);
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   describe('getSalesStats', () => {

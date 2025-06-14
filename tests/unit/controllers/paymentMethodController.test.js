@@ -2,7 +2,6 @@
 const mongoose = require('mongoose');
 const paymentMethodController = require('../../../controllers/paymentMethodController');
 const PaymentMethod = require('../../../models/PaymentMethod');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
   mockCashPaymentMethod, 
   mockCardPaymentMethod, 
@@ -16,17 +15,8 @@ const { MESSAGES } = require('../../../config/messages');
 jest.mock('../../../models/PaymentMethod');
 
 describe('Payment Method Controller', () => {
-  let req, res;
-
   beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
     jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   describe('getPaymentMethods', () => {

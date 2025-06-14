@@ -4,7 +4,6 @@ const posSessionController = require('../../../controllers/posSessionController'
 const PosSession = require('../../../models/PosSession');
 const { MESSAGES } = require('../../../config/messages');
 const Sale = require('../../../models/Sale');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
   mockPosSession, 
   mockClosedPosSession, 
@@ -22,17 +21,8 @@ jest.mock('../../../models/PosSession');
 jest.mock('../../../models/Sale');
 
 describe('POS Session Controller', () => {
-  let req, res;
-
   beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   const setupMockFindOne = (returnValue) => {
