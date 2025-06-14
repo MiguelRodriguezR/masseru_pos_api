@@ -1,9 +1,10 @@
 // controllers/paymentMethodController.js
-const PaymentMethod = require('../models/PaymentMethod');
+const PaymentMethodModel = require('../models/PaymentMethod');
 
 // Get all payment methods
 exports.getPaymentMethods = async (req, res) => {
   try {
+    const PaymentMethod = PaymentMethodModel.getModel(req.db);
     const paymentMethods = await PaymentMethod.find().sort({ name: 1 });
     res.json({ paymentMethods });
   } catch (error) {
@@ -15,6 +16,7 @@ exports.getPaymentMethods = async (req, res) => {
 // Get active payment methods
 exports.getActivePaymentMethods = async (req, res) => {
   try {
+    const PaymentMethod = PaymentMethodModel.getModel(req.db);
     const paymentMethods = await PaymentMethod.find({ isActive: true }).sort({ name: 1 });
     res.json({ paymentMethods });
   } catch (error) {
@@ -26,6 +28,7 @@ exports.getActivePaymentMethods = async (req, res) => {
 // Get payment method by ID
 exports.getPaymentMethodById = async (req, res) => {
   try {
+    const PaymentMethod = PaymentMethodModel.getModel(req.db);
     const paymentMethod = await PaymentMethod.findById(req.params.id);
     
     if (!paymentMethod) {
@@ -42,10 +45,11 @@ exports.getPaymentMethodById = async (req, res) => {
 // Create payment method
 exports.createPaymentMethod = async (req, res) => {
   try {
+    const PaymentMethod = PaymentMethodModel.getModel(req.db);
     const { name, code, description, color, icon } = req.body;
     
     // Check if payment method with same name or code already exists
-    const existingMethod = await PaymentMethod.findOne({ 
+    const existingMethod = await PaymentMethod.findOne({
       $or: [{ name }, { code }] 
     });
     
@@ -78,6 +82,7 @@ exports.createPaymentMethod = async (req, res) => {
 // Update payment method
 exports.updatePaymentMethod = async (req, res) => {
   try {
+    const PaymentMethod = PaymentMethodModel.getModel(req.db);
     const { name, code, description, color, icon, isActive } = req.body;
     
     // Check if payment method exists
@@ -124,6 +129,7 @@ exports.updatePaymentMethod = async (req, res) => {
 // Delete payment method
 exports.deletePaymentMethod = async (req, res) => {
   try {
+    const PaymentMethod = PaymentMethodModel.getModel(req.db);
     const paymentMethod = await PaymentMethod.findById(req.params.id);
     
     if (!paymentMethod) {

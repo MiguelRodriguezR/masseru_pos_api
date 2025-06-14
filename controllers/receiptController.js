@@ -1,10 +1,12 @@
 // controllers/receiptController.js
-const Receipt = require('../models/Receipt');
-const Sale = require('../models/Sale');
+const ReceiptModel = require('../models/Receipt');
+const SaleModel = require('../models/Sale');
 const generateReceipt = require('../utils/receiptGenerator');
 
 exports.getReceipt = async (req, res) => {
   try {
+    const Receipt = ReceiptModel.getModel(req.db);
+    const Sale = SaleModel.getModel(req.db);
     const { saleId } = req.params;
     let receipt = await Receipt.findOne({ sale: saleId });
     if(!receipt) {

@@ -1,8 +1,9 @@
 // controllers/userController.js
-const User = require('../models/User');
+const UserModel = require('../models/User');
 
 exports.getUsers = async (req, res) => {
   try {
+    const User = UserModel.getModel(req.db);
     const users = await User.find().select('-password');
     res.json(users);
   } catch (error) {
@@ -12,6 +13,7 @@ exports.getUsers = async (req, res) => {
 
 exports.getUserById = async (req, res) => {
   try {
+    const User = UserModel.getModel(req.db);
     const user = await User.findById(req.params.id).select('-password');
     if(!user) return res.status(404).json({ msg: 'Usuario no encontrado' });
     res.json(user);
@@ -22,6 +24,7 @@ exports.getUserById = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
+    const User = UserModel.getModel(req.db);
     const { name, email, role, approved } = req.body;
     const updateData = { name, email, role };
     
@@ -45,6 +48,7 @@ exports.updateUser = async (req, res) => {
 
 exports.approveUser = async (req, res) => {
   try {
+    const User = UserModel.getModel(req.db);
     const userId = req.params.id;
     
     const user = await User.findById(userId);
@@ -69,6 +73,7 @@ exports.approveUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
+    const User = UserModel.getModel(req.db);
     const deletedUser = await User.findByIdAndDelete(req.params.id);
     if(!deletedUser) return res.status(404).json({ msg: 'Usuario no encontrado' });
     res.json({ msg: 'Usuario eliminado' });

@@ -62,4 +62,6 @@ purchaseSchema.post('remove', async function(doc) {
   }
 });
 
-module.exports = mongoose.model('Purchase', purchaseSchema);
+const Purchase = mongoose.model('Purchase', purchaseSchema);
+Purchase.getModel = (conn) => conn.model('Purchase', purchaseSchema);
+module.exports = Purchase;

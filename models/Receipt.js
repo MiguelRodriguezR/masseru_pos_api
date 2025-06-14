@@ -7,4 +7,6 @@ const receiptSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Receipt', receiptSchema);
+const Receipt = mongoose.model('Receipt', receiptSchema);
+Receipt.getModel = (conn) => conn.model('Receipt', receiptSchema);
+module.exports = Receipt;

@@ -1,8 +1,8 @@
 // controllers/statsController.js
-const Sale = require('../models/Sale');
-const Product = require('../models/Product');
-const PosSession = require('../models/PosSession');
-const OperationalExpense = require('../models/OperationalExpense');
+const SaleModel = require('../models/Sale');
+const ProductModel = require('../models/Product');
+const PosSessionModel = require('../models/PosSession');
+const OperationalExpenseModel = require('../models/OperationalExpense');
 const { MESSAGES } = require('../config/messages');
 
 /**
@@ -20,7 +20,8 @@ function buildDateFilter(query, field) {
 }
 
 // Internal helper: Sales stats
-async function getSalesStatsData({ startDate, endDate, productId }) {
+async function getSalesStatsData(db, { startDate, endDate, productId }) {
+  const Sale = SaleModel.getModel(db);
   const filter = buildDateFilter({ startDate, endDate }, 'saleDate');
   if (productId) filter['items.product'] = productId;
   const sales = await Sale.find(filter).populate('items.product');
@@ -34,7 +35,9 @@ async function getSalesStatsData({ startDate, endDate, productId }) {
 }
 
 // Internal helper: Product stats
-async function getProductStatsData({ startDate, endDate }) {
+async function getProductStatsData(db, { startDate, endDate }) {
+  const Product = ProductModel.getModel(db);
+  const Sale = SaleModel.getModel(db);
   const dateFilter = buildDateFilter({ startDate, endDate }, 'saleDate');
   const [products, sales] = await Promise.all([
     Product.find(),
@@ -72,7 +75,8 @@ async function getProductStatsData({ startDate, endDate }) {
 }
 
 // Internal helper: Customer stats
-async function getCustomerStatsData({ startDate, endDate }) {
+async function getCustomerStatsData(db, { startDate, endDate }) {
+  const Sale = SaleModel.getModel(db);
   const filter = buildDateFilter({ startDate, endDate }, 'saleDate');
   const sales = await Sale.find(filter);
   const hourCounts = {};
@@ -100,7 +104,9 @@ async function getCustomerStatsData({ startDate, endDate }) {
 }
 
 // Internal helper: POS session stats
-async function getPosSessionStatsData({ startDate, endDate }) {
+async function getPosSessionStatsData(db, { startDate, endDate }) {
+  const PosSession = PosSessionModel.getModel(db);
+  const Sale = SaleModel.getModel(db);
   const sessionFilter = buildDateFilter({ startDate, endDate }, 'openingDate');
   const [sessions, sales] = await Promise.all([
     PosSession.find(sessionFilter).populate('user', 'name'),
@@ -133,7 +139,8 @@ async function getPosSessionStatsData({ startDate, endDate }) {
   };
 }
 
-async function getOperationalExpenseStatsData({ startDate, endDate }) {
+async function getOperationalExpenseStatsData(db, { startDate, endDate }) {
+  const OperationalExpense = OperationalExpenseModel.getModel(db);
   const filter = buildDateFilter({ startDate, endDate }, 'date');
   const expenses = await OperationalExpense.find(filter);
   
@@ -174,7 +181,7 @@ async function getOperationalExpenseStatsData({ startDate, endDate }) {
 // Controllers
 exports.getSalesStats = async (req, res) => {
   try {
-    const stats = await getSalesStatsData(req.query);
+    const stats = await getSalesStatsData(req.db, req.query);
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: MESSAGES.STATS_ERROR });
@@ -183,7 +190,7 @@ exports.getSalesStats = async (req, res) => {
 
 exports.getProductStats = async (req, res) => {
   try {
-    const stats = await getProductStatsData(req.query);
+    const stats = await getProductStatsData(req.db, req.query);
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: MESSAGES.STATS_ERROR });
@@ -192,7 +199,7 @@ exports.getProductStats = async (req, res) => {
 
 exports.getCustomerStats = async (req, res) => {
   try {
-    const stats = await getCustomerStatsData(req.query);
+    const stats = await getCustomerStatsData(req.db, req.query);
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: MESSAGES.STATS_ERROR });
@@ -201,7 +208,7 @@ exports.getCustomerStats = async (req, res) => {
 
 exports.getPosSessionStats = async (req, res) => {
   try {
-    const stats = await getPosSessionStatsData(req.query);
+    const stats = await getPosSessionStatsData(req.db, req.query);
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: MESSAGES.STATS_ERROR });
@@ -210,7 +217,7 @@ exports.getPosSessionStats = async (req, res) => {
 
 exports.getOperationalExpensesStats = async (req, res) => {
   try {
-    const stats = await getOperationalExpenseStatsData(req.query);
+    const stats = await getOperationalExpenseStatsData(req.db, req.query);
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: MESSAGES.STATS_ERROR });
@@ -225,11 +232,11 @@ exports.getDashboardStats = async (req, res) => {
       productId: req.query.productId
     };
     const [salesStats, productStats, customerStats, posSessionStats, operationalExpenseStats] = await Promise.all([
-      getSalesStatsData(params),
-      getProductStatsData(params),
-      getCustomerStatsData(params),
-      getPosSessionStatsData(params),
-      getOperationalExpenseStatsData(params)
+      getSalesStatsData(req.db, params),
+      getProductStatsData(req.db, params),
+      getCustomerStatsData(req.db, params),
+      getPosSessionStatsData(req.db, params),
+      getOperationalExpenseStatsData(req.db, params)
     ]);
     res.json({ salesStats, productStats, customerStats, posSessionStats, operationalExpenseStats });
   } catch (error) {

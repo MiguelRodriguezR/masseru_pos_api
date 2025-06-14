@@ -1,9 +1,10 @@
 // controllers/purchaseController.js
-const Purchase = require('../models/Purchase');
-const Product = require('../models/Product');
+const PurchaseModel = require('../models/Purchase');
+const ProductModel = require('../models/Product');
 
 exports.getPurchases = async (req, res) => {
   try {
+    const Purchase = PurchaseModel.getModel(req.db);
     // Pagination parameters
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -54,6 +55,7 @@ exports.getPurchases = async (req, res) => {
 
 exports.getPurchaseById = async (req, res) => {
   try {
+    const Purchase = PurchaseModel.getModel(req.db);
     const purchase = await Purchase.findById(req.params.id)
       .populate('items.product', 'name barcode salePrice purchaseCost')
       .populate('createdBy', 'name');
@@ -67,6 +69,8 @@ exports.getPurchaseById = async (req, res) => {
 
 exports.createPurchase = async (req, res) => {
   try {
+    const Purchase = PurchaseModel.getModel(req.db);
+    const Product = ProductModel.getModel(req.db);
     const { items, supplier, invoiceNumber, notes } = req.body;
     
     // Validate items
@@ -113,6 +117,8 @@ exports.createPurchase = async (req, res) => {
 
 exports.updatePurchase = async (req, res) => {
   try {
+    const Purchase = PurchaseModel.getModel(req.db);
+    const Product = ProductModel.getModel(req.db);
     const purchaseId = req.params.id;
     const { items, supplier, invoiceNumber, notes } = req.body;
     
@@ -169,6 +175,7 @@ exports.updatePurchase = async (req, res) => {
 
 exports.deletePurchase = async (req, res) => {
   try {
+    const Purchase = PurchaseModel.getModel(req.db);
     const purchase = await Purchase.findById(req.params.id);
     
     if (!purchase) return res.status(404).json({ msg: 'Compra no encontrada' });

@@ -19,4 +19,6 @@ const productSchema = new mongoose.Schema({
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Product', productSchema);
+const Product = mongoose.model('Product', productSchema);
+Product.getModel = (conn) => conn.model('Product', productSchema);
+module.exports = Product;

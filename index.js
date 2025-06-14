@@ -3,6 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const tenantMiddleware = require('./middlewares/tenantMiddleware');
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -17,13 +18,14 @@ const operationalExpenseRoutes = require('./routes/operationalExpenseRoutes');
 
 const app = express();
 
-// Conectar a la base de datos
+// Conectar base de datos por defecto (opcional)
 connectDB();
 
 // Middlewares
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(tenantMiddleware);
 app.use('/uploads', express.static('uploads')); // Servir archivos estáticos desde la carpeta uploads
 
 // Rutas
