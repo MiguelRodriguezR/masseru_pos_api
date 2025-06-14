@@ -3,12 +3,24 @@
 /**
  * Creates a mock request object for testing controllers
  */
-const mockRequest = (body = {}, user = { id: '5f7e3c6a8ea7c8362a5c8b1b' }, params = {}, query = {}) => {
+// The controllers now expect a `db` property on the request object in order to
+// obtain tenant specific models.  Most of the unit tests were written before
+// multi tenancy was introduced so they don't provide this property.  To keep
+// them working we include a dummy `db` object by default and also allow it to
+// be overridden when needed.
+const mockRequest = (
+  body = {},
+  user = { id: '5f7e3c6a8ea7c8362a5c8b1b' },
+  params = {},
+  query = {},
+  db = {}
+) => {
   return {
     body,
     user,
     params,
-    query
+    query,
+    db
   };
 };
 

@@ -23,6 +23,8 @@ describe('Auth Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    // Controllers obtain models from req.db, so return the mocked model
+    User.getModel.mockReturnValue(User);
     userData = {
         name: 'Existing User',
         email: 'existing@example.com',

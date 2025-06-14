@@ -31,6 +31,8 @@ describe('Sale Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    Sale.getModel.mockReturnValue(Sale);
+    Product.getModel.mockReturnValue(Product);
   });
 
   afterEach(() => {
@@ -155,6 +157,7 @@ describe('Sale Controller', () => {
         changeAmount: 20
       }));
       expect(addSaleToSession).toHaveBeenCalledWith(
+        req.db,
         saleId, // Check with the ObjectId
         mockUser._id.toString()
       );

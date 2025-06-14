@@ -29,6 +29,8 @@ describe('POS Session Controller', () => {
     res = mockResponse();
     jest.spyOn(console, 'error').mockImplementation(() => {});
     req = mockRequest();
+    PosSession.getModel.mockReturnValue(PosSession);
+    Sale.getModel.mockReturnValue(Sale);
   });
 
   afterEach(() => {

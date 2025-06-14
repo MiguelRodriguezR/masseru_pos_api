@@ -22,6 +22,7 @@ describe('Payment Method Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    PaymentMethod.getModel.mockReturnValue(PaymentMethod);
     jest.spyOn(console, 'error').mockImplementation(() => {});
   });
 
