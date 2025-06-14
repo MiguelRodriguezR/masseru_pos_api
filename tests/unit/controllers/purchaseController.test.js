@@ -25,6 +25,8 @@ describe('Purchase Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    Purchase.getModel.mockReturnValue(Purchase);
+    Product.getModel.mockReturnValue(Product);
   });
 
   afterEach(() => {

@@ -25,6 +25,7 @@ describe('Product Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    Product.getModel.mockReturnValue(Product);
   });
 
   afterEach(() => {

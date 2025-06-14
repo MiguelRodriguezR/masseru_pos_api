@@ -20,6 +20,8 @@ describe('Receipt Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    Receipt.getModel.mockReturnValue(Receipt);
+    Sale.getModel.mockReturnValue(Sale);
   });
 
   afterEach(() => {

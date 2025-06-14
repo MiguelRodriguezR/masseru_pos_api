@@ -36,6 +36,9 @@ describe('Stats Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    Sale.getModel.mockReturnValue(Sale);
+    Product.getModel.mockReturnValue(Product);
+    PosSession.getModel.mockReturnValue(PosSession);
   });
 
   afterEach(() => {

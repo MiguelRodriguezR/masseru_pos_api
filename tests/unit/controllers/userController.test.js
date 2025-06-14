@@ -16,6 +16,7 @@ describe('User Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    User.getModel.mockReturnValue(User);
   });
 
   afterEach(() => {

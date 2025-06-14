@@ -21,6 +21,7 @@ describe('Operational Expense Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
+    OperationalExpense.getModel.mockReturnValue(OperationalExpense);
   });
 
   afterEach(() => {
