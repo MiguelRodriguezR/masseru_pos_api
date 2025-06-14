@@ -33,7 +33,8 @@ describe('Sale Controller', () => {
     jest.clearAllMocks();
     res = mockResponse();
     req = mockRequest();
-    PosSession.findOne = jest.fn().mockResolvedValue(null);
+    // THIS NEEDS TO BE ADDED AS A MOCK IN THE MOCKS FOLDER
+    //PosSession.findOne = jest.fn().mockResolvedValue(null);
   });
 
   afterEach(() => {
