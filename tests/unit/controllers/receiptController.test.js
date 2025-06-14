@@ -4,7 +4,6 @@ const receiptController = require('../../../controllers/receiptController');
 const Receipt = require('../../../models/Receipt');
 const Sale = require('../../../models/Sale');
 const generateReceipt = require('../../../utils/receiptGenerator');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { mockReceipt, mockReceiptWithPopulatedSale } = require('../../mocks/receiptMock');
 const { mockCashSale } = require('../../mocks/saleMock');
 
@@ -14,17 +13,6 @@ jest.mock('../../../models/Sale');
 jest.mock('../../../utils/receiptGenerator');
 
 describe('Receipt Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('getReceipt', () => {
     test('should return an existing receipt if found', async () => {

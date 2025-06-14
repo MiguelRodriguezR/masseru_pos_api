@@ -4,7 +4,6 @@ const purchaseController = require('../../../controllers/purchaseController');
 const Purchase = require('../../../models/Purchase');
 const Product = require('../../../models/Product');
 const { MESSAGES } = require('../../../config/messages');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
   mockPurchase, 
   mockPurchaseWithPopulatedProducts, 
@@ -19,17 +18,6 @@ jest.mock('../../../models/Purchase');
 jest.mock('../../../models/Product');
 
 describe('Purchase Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('getPurchases', () => {
     test('should get purchases with pagination and search', async () => {
