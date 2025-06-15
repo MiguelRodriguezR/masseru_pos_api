@@ -63,16 +63,19 @@ const setupMockModel = (model, mockData) => {
 };
 
 // Create a generic query chain mock used by other helpers
-const createQueryMock = (returnValue) => ({
-  populate: jest.fn().mockReturnThis(),
-  sort: jest.fn().mockResolvedValue(returnValue),
-  select: jest.fn().mockResolvedValue(returnValue),
-  skip: jest.fn().mockReturnThis(),
-  limit: jest.fn().mockReturnThis(),
-  then: (resolve, reject) =>
-    Promise.resolve(returnValue).then(resolve, reject),
-  exec: jest.fn().mockResolvedValue(returnValue)
-});
+const createQueryMock = (returnValue) => {
+  const query = {
+    populate: jest.fn().mockReturnThis(),
+    sort: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    exec: jest.fn().mockResolvedValue(returnValue)
+  };
+  query.then = (resolve, reject) =>
+    Promise.resolve(returnValue).then(resolve, reject);
+  return query;
+};
 
 // Mock Model.find to resolve with provided data using chained query methods
 const mockFind = (model, data) => {

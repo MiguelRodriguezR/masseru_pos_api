@@ -5,6 +5,13 @@ const Sale = require('../../../models/Sale');
 const Product = require('../../../models/Product');
 const PosSession = require('../../../models/PosSession');
 const { MESSAGES } = require('../../../config/messages');
+// Helper mocks from tests/mocks/mockUtils are used
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 // Note: posSessionController import might be removed or changed below based on new mocking strategy
 const { 
   mockCashSale, 
@@ -51,16 +58,17 @@ describe('Sale Controller', () => {
       req = mockRequest(saleData, { id: mockUser._id.toString() });
 
       // Mock Product.findById to return a product with sufficient inventory
-      Product.findById = jest.fn().mockResolvedValue({
+      const productWithSave = {
         ...mockProduct,
         salePrice: 50, // Override salePrice to align with test's expected totalAmount
         quantity: 50,
         save: jest.fn().mockResolvedValue({
           ...mockProduct,
-          salePrice: 50, // Ensure consistent salePrice after save if it were re-read (though not in this flow)
-          quantity: 48 // After deducting 2
+          salePrice: 50,
+          quantity: 48
         })
-      });
+      };
+      mockFindById(Product, productWithSave);
 
       // Define fixed values for the sale instance for consistent testing
       const saleId = new mongoose.Types.ObjectId();
@@ -213,7 +221,7 @@ describe('Sale Controller', () => {
           ]
         })
       };
-      Product.findById = jest.fn().mockResolvedValue(productWithVariants);
+      mockFindById(Product, productWithVariants);
 
       // Mock Sale constructor and save method
       const savedSale = {
@@ -322,16 +330,17 @@ describe('Sale Controller', () => {
       req = mockRequest(saleData, { id: mockUser._id.toString() });
 
       // Mock Product.findById to return a product with sufficient inventory
-      Product.findById = jest.fn().mockResolvedValue({
+      const productForDiscount = {
         ...mockProduct,
-        salePrice: 50, // Override salePrice to align with test's expected totalAmount after discount
+        salePrice: 50,
         quantity: 50,
         save: jest.fn().mockResolvedValue({
           ...mockProduct,
-          salePrice: 50, // Ensure consistent salePrice after save
-          quantity: 48 // After deducting 2
+          salePrice: 50,
+          quantity: 48
         })
-      });
+      };
+      mockFindById(Product, productForDiscount);
 
       // Mock Sale constructor and save method
       const savedSale = {
@@ -535,7 +544,7 @@ describe('Sale Controller', () => {
       req = mockRequest(saleData, { id: mockUser._id.toString() });
 
       // Mock Product.findById to return null
-      Product.findById = jest.fn().mockResolvedValue(null);
+      mockFindById(Product, null);
 
       // Execute the controller
       await saleController.createSale(req, res);
@@ -567,7 +576,7 @@ describe('Sale Controller', () => {
       req = mockRequest(saleData, { id: mockUser._id.toString() });
 
       // Mock Product.findById to return a product with insufficient inventory
-      Product.findById = jest.fn().mockResolvedValue({
+      mockFindById(Product, {
         ...mockProduct,
         quantity: 50 // Less than requested
       });
@@ -606,15 +615,11 @@ describe('Sale Controller', () => {
       req = mockRequest(saleData, { id: mockUser._id.toString() });
 
       // Mock Product.findById to return a product with insufficient variant inventory
-      Product.findById = jest.fn().mockResolvedValue({
+      mockFindById(Product, {
         ...mockProductWithVariants,
-        quantity: 100, // Sufficient total inventory
+        quantity: 100,
         variants: [
-          {
-            color: 'Red',
-            size: 'M',
-            quantity: 30 // Less than requested
-          }
+          { color: 'Red', size: 'M', quantity: 30 }
         ]
       });
 
@@ -652,20 +657,12 @@ describe('Sale Controller', () => {
       req = mockRequest(saleData, { id: mockUser._id.toString() });
 
       // Mock Product.findById to return a product without the requested variant
-      Product.findById = jest.fn().mockResolvedValue({
+      mockFindById(Product, {
         ...mockProductWithVariants,
         quantity: 100,
         variants: [
-          {
-            color: 'Red',
-            size: 'M',
-            quantity: 30
-          },
-          {
-            color: 'Blue',
-            size: 'L',
-            quantity: 20
-          }
+          { color: 'Red', size: 'M', quantity: 30 },
+          { color: 'Blue', size: 'L', quantity: 20 }
         ]
       });
 
@@ -699,10 +696,10 @@ describe('Sale Controller', () => {
       req = mockRequest(saleData, { id: mockUser._id.toString() });
 
       // Mock Product.findById to return a product
-      Product.findById = jest.fn().mockResolvedValue({
+      mockFindById(Product, {
         ...mockProduct,
         quantity: 50,
-        save: jest.fn().mockResolvedValue(this) // Mock save to prevent error
+        save: jest.fn().mockResolvedValue(this)
       });
 
       // Execute the controller
@@ -757,23 +754,13 @@ describe('Sale Controller', () => {
       const endDate = '2023-01-31';
       req = mockRequest({}, {}, {}, { page, limit, startDate, endDate });
 
-      // Mock Sale.countDocuments to return count
-      Sale.countDocuments = jest.fn().mockResolvedValue(4);
-
-      // Mock Sale.find with chained methods
-      Sale.find = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        populate: jest.fn().mockReturnThis(),
-        populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue([
-          mockCashSale,
-          mockCardSale,
-          mockMixedPaymentSale,
-          mockCashSaleWithChange
-        ])
-      });
+      mockCountDocuments(Sale, 4);
+      mockFind(Sale, [
+        mockCashSale,
+        mockCardSale,
+        mockMixedPaymentSale,
+        mockCashSaleWithChange
+      ]);
 
       // Execute the controller
       await saleController.getSales(req, res);
@@ -815,39 +802,34 @@ describe('Sale Controller', () => {
 
       // For product name search, we need to mock the full process
       // since it requires manual filtering
-      Sale.find = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        populate: jest.fn().mockReturnThis(),
-        populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue([
-          {
-            ...mockCashSale,
-            items: [
-              {
-                product: {
-                  name: 'Test Product',
-                  barcode: '123456789'
-                },
-                quantity: 2,
-                salePrice: 50
-              }
-            ]
-          },
-          {
-            ...mockCardSale,
-            items: [
-              {
-                product: {
-                  name: 'Another Product',
-                  barcode: '987654321'
-                },
-                quantity: 1,
-                salePrice: 150
-              }
-            ]
-          }
-        ])
-      });
+      mockFind(Sale, [
+        {
+          ...mockCashSale,
+          items: [
+            {
+              product: {
+                name: 'Test Product',
+                barcode: '123456789'
+              },
+              quantity: 2,
+              salePrice: 50
+            }
+          ]
+        },
+        {
+          ...mockCardSale,
+          items: [
+            {
+              product: {
+                name: 'Another Product',
+                barcode: '987654321'
+              },
+              quantity: 1,
+              salePrice: 150
+            }
+          ]
+        }
+      ]);
 
       // Execute the controller
       await saleController.getSales(req, res);
@@ -895,18 +877,7 @@ describe('Sale Controller', () => {
       // Mock request with sale ID
       req = mockRequest({}, {}, { id: mockCashSale._id.toString() });
 
-      // Mock full populate chain exactly as in controller
-      const mockPopulatedSale = {
-        ...mockCashSale,
-        populate: jest.fn().mockReturnThis(), // Initial populate
-      };
-      // Chain populate calls
-      mockPopulatedSale.populate
-        .mockReturnValueOnce(mockPopulatedSale) // user
-        .mockReturnValueOnce(mockPopulatedSale) // items.product
-        .mockReturnValueOnce(Promise.resolve(mockCashSale)); // paymentDetails.paymentMethod and resolve
-
-      Sale.findById = jest.fn().mockReturnValue(mockPopulatedSale);
+      mockFindById(Sale, mockCashSale);
 
       // Execute the controller
       await saleController.getSaleById(req, res);
@@ -920,15 +891,7 @@ describe('Sale Controller', () => {
       // Mock request with non-existent sale ID
       req = mockRequest({}, {}, { id: 'nonexistent-id' });
 
-      // Mock null sale with populate chain that ultimately returns null
-      const mockNullSale = {
-        populate: jest.fn().mockReturnThis()
-      };
-      Sale.findById = jest.fn().mockReturnValue(mockNullSale);
-      mockNullSale.populate
-        .mockReturnValueOnce(mockNullSale)
-        .mockReturnValueOnce(mockNullSale)
-        .mockResolvedValue(null);
+      mockFindById(Sale, null);
 
       // Execute the controller
       await saleController.getSaleById(req, res);
