@@ -3,24 +3,12 @@ const mongoose = require('mongoose');
 const { MESSAGES } = require('../../../config/messages');
 const userController = require('../../../controllers/userController');
 const User = require('../../../models/User');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { mockUser, mockAdmin, mockUnapprovedUser, mockUsersList } = require('../../mocks/userMock');
 
 // Mock the mongoose models
 jest.mock('../../../models/User');
 
 describe('User Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('getUsers', () => {
     test('should get all users successfully', async () => {

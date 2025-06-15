@@ -3,9 +3,9 @@ const mongoose = require('mongoose');
 const saleController = require('../../../controllers/saleController');
 const Sale = require('../../../models/Sale');
 const Product = require('../../../models/Product');
+const PosSession = require('../../../models/PosSession');
 const { MESSAGES } = require('../../../config/messages');
 // Note: posSessionController import might be removed or changed below based on new mocking strategy
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
   mockCashSale, 
   mockCardSale, 
@@ -19,23 +19,13 @@ const { mockUser } = require('../../mocks/userMock');
 // Mock the mongoose models and controllers
 jest.mock('../../../models/Sale');
 jest.mock('../../../models/Product');
+jest.mock('../../../models/PosSession');
 jest.mock('../../../controllers/posSessionController', () => ({
-  addSaleToSession: jest.fn() 
+  addSaleToSession: jest.fn()
 }));
 const { addSaleToSession } = require('../../../controllers/posSessionController'); // Import the mock
 
 describe('Sale Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('createSale', () => {
     test('should create a sale successfully with cash payment', async () => {

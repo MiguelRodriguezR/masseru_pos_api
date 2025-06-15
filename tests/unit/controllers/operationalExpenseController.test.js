@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const { MESSAGES } = require('../../../config/messages');
 const operationalExpenseController = require('../../../controllers/operationalExpenseController');
 const OperationalExpense = require('../../../models/OperationalExpense');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
   mockOperationalExpense, 
   mockOperationalExpense2, 
@@ -15,17 +14,6 @@ const { mockUser } = require('../../mocks/userMock');
 jest.mock('../../../models/OperationalExpense');
 
 describe('Operational Expense Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('getOperationalExpenses', () => {
     test('should get operational expenses with pagination and search', async () => {
