@@ -1,10 +1,16 @@
 // Imports
+// Uses mocks helpers from tests/mocks/mockUtils
 const mongoose = require('mongoose');
 const purchaseController = require('../../../controllers/purchaseController');
 const Purchase = require('../../../models/Purchase');
 const Product = require('../../../models/Product');
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 const { MESSAGES } = require('../../../config/messages');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
 const { 
   mockPurchase, 
   mockPurchaseWithPopulatedProducts, 
@@ -19,17 +25,6 @@ jest.mock('../../../models/Purchase');
 jest.mock('../../../models/Product');
 
 describe('Purchase Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('getPurchases', () => {
     test('should get purchases with pagination and search', async () => {
@@ -39,17 +34,8 @@ describe('Purchase Controller', () => {
       const search = 'supplier';
       req = mockRequest({}, {}, {}, { page, limit, search });
 
-      // Mock Purchase.countDocuments to return count
-      Purchase.countDocuments = jest.fn().mockResolvedValue(2);
-
-      // Mock Purchase.find with chained methods
-      Purchase.find = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        populate: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue(mockPurchasesList)
-      });
+      mockCountDocuments(Purchase, 2);
+      mockFind(Purchase, mockPurchasesList);
 
       // Execute the controller
       await purchaseController.getPurchases(req, res);
@@ -86,17 +72,8 @@ describe('Purchase Controller', () => {
       const limit = 10;
       req = mockRequest({}, {}, {}, { page, limit });
 
-      // Mock Purchase.countDocuments to return count
-      Purchase.countDocuments = jest.fn().mockResolvedValue(2);
-
-      // Mock Purchase.find with chained methods
-      Purchase.find = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        populate: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue(mockPurchasesList)
-      });
+      mockCountDocuments(Purchase, 2);
+      mockFind(Purchase, mockPurchasesList);
 
       // Execute the controller
       await purchaseController.getPurchases(req, res);
@@ -136,13 +113,7 @@ describe('Purchase Controller', () => {
       // Mock request with purchase ID
       req = mockRequest({}, {}, { id: mockPurchase._id.toString() });
 
-      // Mock Purchase.findById with chained populate
-      const populateMock = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockPurchaseWithPopulatedProducts)
-      });
-      Purchase.findById = jest.fn().mockReturnValue({
-        populate: populateMock
-      });
+      mockFindById(Purchase, mockPurchaseWithPopulatedProducts);
 
       // Execute the controller
       await purchaseController.getPurchaseById(req, res);
@@ -156,13 +127,7 @@ describe('Purchase Controller', () => {
       // Mock request with non-existent purchase ID
       req = mockRequest({}, {}, { id: 'nonexistent-id' });
 
-      // Mock Purchase.findById to return null
-      const populateMock = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(null)
-      });
-      Purchase.findById = jest.fn().mockReturnValue({
-        populate: populateMock
-      });
+      mockFindById(Purchase, null);
 
       // Execute the controller
       await purchaseController.getPurchaseById(req, res);
@@ -234,10 +199,7 @@ describe('Purchase Controller', () => {
         updatedAt: new Date()
       };
 
-      const mockPurchaseInstance = {
-        save: jest.fn().mockResolvedValue(savedPurchase)
-      };
-      Purchase.mockImplementation(() => mockPurchaseInstance);
+      const mockPurchaseInstance = mockSave(Purchase, savedPurchase);
 
       // Execute the controller
       await purchaseController.createPurchase(req, res);
@@ -387,20 +349,11 @@ describe('Purchase Controller', () => {
       // Mock request
       req = mockRequest(updateData, {}, { id: mockPurchase._id.toString() });
 
-      // Mock Purchase.findById to return a purchase
-      Purchase.findById = jest.fn().mockResolvedValue({
+      mockFindById(Purchase, {
         ...mockPurchase,
         items: [
-          {
-            product: mockProduct._id,
-            quantity: 10,
-            purchasePrice: 50
-          },
-          {
-            product: mockProductWithVariants._id,
-            quantity: 5,
-            purchasePrice: 80
-          }
+          { product: mockProduct._id, quantity: 10, purchasePrice: 50 },
+          { product: mockProductWithVariants._id, quantity: 5, purchasePrice: 80 }
         ],
         save: jest.fn().mockResolvedValue({
           ...mockPurchase,
@@ -467,7 +420,7 @@ describe('Purchase Controller', () => {
           notes: updateData.notes
         })
       };
-      Purchase.findById = jest.fn().mockResolvedValue(purchaseToUpdate);
+      mockFindById(Purchase, purchaseToUpdate);
 
       // Execute the controller
       await purchaseController.updatePurchase(req, res);
@@ -495,8 +448,7 @@ describe('Purchase Controller', () => {
       // Mock request
       req = mockRequest(updateData, {}, { id: 'nonexistent-id' });
 
-      // Mock Purchase.findById to return null
-      Purchase.findById = jest.fn().mockResolvedValue(null);
+      mockFindById(Purchase, null);
 
       // Execute the controller
       await purchaseController.updatePurchase(req, res);

@@ -1,8 +1,14 @@
 // Imports
+// Mongoose mock helpers reside in tests/mocks/mockUtils
 const mongoose = require('mongoose');
 const paymentMethodController = require('../../../controllers/paymentMethodController');
 const PaymentMethod = require('../../../models/PaymentMethod');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 const { 
   mockCashPaymentMethod, 
   mockCardPaymentMethod, 
@@ -16,25 +22,10 @@ const { MESSAGES } = require('../../../config/messages');
 jest.mock('../../../models/PaymentMethod');
 
 describe('Payment Method Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('getPaymentMethods', () => {
     test('should get all payment methods successfully', async () => {
-      // Mock PaymentMethod.find to return payment methods
-      PaymentMethod.find = jest.fn().mockReturnValue({
-        sort: jest.fn().mockResolvedValue(mockPaymentMethodsList)
-      });
+      mockFind(PaymentMethod, mockPaymentMethodsList);
 
       // Execute the controller
       await paymentMethodController.getPaymentMethods(req, res);
@@ -65,10 +56,7 @@ describe('Payment Method Controller', () => {
 
   describe('getActivePaymentMethods', () => {
     test('should get active payment methods successfully', async () => {
-      // Mock PaymentMethod.find to return active payment methods
-      PaymentMethod.find = jest.fn().mockReturnValue({
-        sort: jest.fn().mockResolvedValue(mockActivePaymentMethodsList)
-      });
+      mockFind(PaymentMethod, mockActivePaymentMethodsList);
 
       // Execute the controller
       await paymentMethodController.getActivePaymentMethods(req, res);
@@ -102,8 +90,7 @@ describe('Payment Method Controller', () => {
       // Mock request with payment method ID
       req = mockRequest({}, {}, { id: mockCashPaymentMethod._id.toString() });
 
-      // Mock PaymentMethod.findById to return a payment method
-      PaymentMethod.findById = jest.fn().mockResolvedValue(mockCashPaymentMethod);
+      mockFindById(PaymentMethod, mockCashPaymentMethod);
 
       // Execute the controller
       await paymentMethodController.getPaymentMethodById(req, res);
@@ -117,8 +104,7 @@ describe('Payment Method Controller', () => {
       // Mock request with non-existent payment method ID
       req = mockRequest({}, {}, { id: 'nonexistent-id' });
 
-      // Mock PaymentMethod.findById to return null
-      PaymentMethod.findById = jest.fn().mockResolvedValue(null);
+      mockFindById(PaymentMethod, null);
 
       // Execute the controller
       await paymentMethodController.getPaymentMethodById(req, res);

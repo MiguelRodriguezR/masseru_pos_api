@@ -1,9 +1,15 @@
 // Imports
+// Helper mocks from tests/mocks/mockUtils are used
 const mongoose = require('mongoose');
 const { MESSAGES } = require('../../../config/messages');
 const operationalExpenseController = require('../../../controllers/operationalExpenseController');
 const OperationalExpense = require('../../../models/OperationalExpense');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 const { 
   mockOperationalExpense, 
   mockOperationalExpense2, 
@@ -15,17 +21,6 @@ const { mockUser } = require('../../mocks/userMock');
 jest.mock('../../../models/OperationalExpense');
 
 describe('Operational Expense Controller', () => {
-  let req, res;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
 
   describe('getOperationalExpenses', () => {
     test('should get operational expenses with pagination and search', async () => {
@@ -35,16 +30,8 @@ describe('Operational Expense Controller', () => {
       const search = 'rent';
       req = mockRequest({}, {}, {}, { page, limit, search });
 
-      // Mock OperationalExpense.countDocuments to return count
-      OperationalExpense.countDocuments = jest.fn().mockResolvedValue(3);
-
-      // Mock OperationalExpense.find with chained methods
-      OperationalExpense.find = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue(mockOperationalExpensesList)
-      });
+      mockCountDocuments(OperationalExpense, 3);
+      mockFind(OperationalExpense, mockOperationalExpensesList);
 
       // Execute the controller
       await operationalExpenseController.getOperationalExpenses(req, res);
@@ -79,16 +66,8 @@ describe('Operational Expense Controller', () => {
       const limit = 10;
       req = mockRequest({}, {}, {}, { page, limit });
 
-      // Mock OperationalExpense.countDocuments to return count
-      OperationalExpense.countDocuments = jest.fn().mockResolvedValue(3);
-
-      // Mock OperationalExpense.find with chained methods
-      OperationalExpense.find = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue(mockOperationalExpensesList)
-      });
+      mockCountDocuments(OperationalExpense, 3);
+      mockFind(OperationalExpense, mockOperationalExpensesList);
 
       // Execute the controller
       await operationalExpenseController.getOperationalExpenses(req, res);
@@ -128,10 +107,7 @@ describe('Operational Expense Controller', () => {
       // Mock request with expense ID
       req = mockRequest({}, {}, { id: mockOperationalExpense._id.toString() });
 
-      // Mock OperationalExpense.findById with chained populate
-      OperationalExpense.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockOperationalExpense)
-      });
+      mockFindById(OperationalExpense, mockOperationalExpense);
 
       // Execute the controller
       await operationalExpenseController.getOperationalExpenseById(req, res);
@@ -145,10 +121,7 @@ describe('Operational Expense Controller', () => {
       // Mock request with non-existent expense ID
       req = mockRequest({}, {}, { id: 'nonexistent-id' });
 
-      // Mock OperationalExpense.findById to return null
-      OperationalExpense.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(null)
-      });
+      mockFindById(OperationalExpense, null);
 
       // Execute the controller
       await operationalExpenseController.getOperationalExpenseById(req, res);
