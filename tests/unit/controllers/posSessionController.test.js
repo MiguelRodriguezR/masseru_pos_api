@@ -28,9 +28,6 @@ jest.mock('../../../models/PosSession');
 jest.mock('../../../models/Sale');
 
 describe('POS Session Controller', () => {
-  beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
 
   const setupMockFindOne = (returnValue) => {
     PosSession.findOne = jest.fn().mockResolvedValue(returnValue);

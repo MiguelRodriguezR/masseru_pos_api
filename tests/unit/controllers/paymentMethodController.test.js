@@ -22,9 +22,6 @@ const { MESSAGES } = require('../../../config/messages');
 jest.mock('../../../models/PaymentMethod');
 
 describe('Payment Method Controller', () => {
-  beforeEach(() => {
-    jest.spyOn(console, 'error').mockImplementation(() => {});
-  });
 
   describe('getPaymentMethods', () => {
     test('should get all payment methods successfully', async () => {
