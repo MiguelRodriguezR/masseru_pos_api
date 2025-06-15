@@ -1,8 +1,15 @@
 // Imports
+// Mongoose helper mocks from tests/mocks/mockUtils
 const mongoose = require('mongoose');
 const { MESSAGES } = require('../../../config/messages');
 const userController = require('../../../controllers/userController');
 const User = require('../../../models/User');
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 const { mockUser, mockAdmin, mockUnapprovedUser, mockUsersList } = require('../../mocks/userMock');
 
 // Mock the mongoose models
@@ -12,10 +19,7 @@ describe('User Controller', () => {
 
   describe('getUsers', () => {
     test('should get all users successfully', async () => {
-      // Mock User.find to return users
-      User.find = jest.fn().mockReturnValue({
-        select: jest.fn().mockResolvedValue(mockUsersList)
-      });
+      mockFind(User, mockUsersList);
 
       // Execute the controller
       await userController.getUsers(req, res);
@@ -48,10 +52,7 @@ describe('User Controller', () => {
       // Mock request with user ID
       req = mockRequest({}, {}, { id: mockUser._id.toString() });
 
-      // Mock User.findById to return a user
-      User.findById = jest.fn().mockReturnValue({
-        select: jest.fn().mockResolvedValue(mockUser)
-      });
+      mockFindById(User, mockUser);
 
       // Execute the controller
       await userController.getUserById(req, res);
