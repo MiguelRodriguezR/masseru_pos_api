@@ -1,10 +1,17 @@
 // Imports
+// The tests use helper mocks from tests/mocks/mockUtils
 const mongoose = require('mongoose');
 const statsController = require('../../../controllers/statsController');
 const Sale = require('../../../models/Sale');
 const Product = require('../../../models/Product');
 const PosSession = require('../../../models/PosSession');
 const OperationalExpense = require('../../../models/OperationalExpense');
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 const { MESSAGES } = require('../../../config/messages');
 const { 
   mockCashSale, 
@@ -33,7 +40,7 @@ jest.mock('../../../models/OperationalExpense');
 describe('Stats Controller', () => {
   beforeEach(() => {
     // THIS NEEDS TO BE ADDED AS A MOCK IN THE MOCKS FOLDER
-    OperationalExpense.find = jest.fn().mockResolvedValue([]);
+    mockFind(OperationalExpense, []);
   });
 
   describe('getSalesStats', () => {

@@ -1,10 +1,17 @@
 // Imports
+// Mongoose mocks provided by tests/mocks/mockUtils
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 const { MESSAGES } = require('../../../config/messages');
 const productController = require('../../../controllers/productController');
 const Product = require('../../../models/Product');
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 const { 
   mockProduct, 
   mockProductWithVariants, 
@@ -245,15 +252,9 @@ describe('Product Controller', () => {
       const search = 'test';
       req = mockRequest({}, {}, {}, { page, limit, search });
 
-      // Mock Product.countDocuments to return count
-      Product.countDocuments = jest.fn().mockResolvedValue(3);
-
-      // Mock Product.find with chained methods
-      Product.find = jest.fn().mockReturnValue({
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue(mockProductsList)
-      });
+      // Mock database calls
+      mockCountDocuments(Product, 3);
+      mockFind(Product, mockProductsList);
 
       // Execute the controller
       await productController.getProducts(req, res);
@@ -290,15 +291,8 @@ describe('Product Controller', () => {
       const limit = 10;
       req = mockRequest({}, {}, {}, { page, limit });
 
-      // Mock Product.countDocuments to return count
-      Product.countDocuments = jest.fn().mockResolvedValue(3);
-
-      // Mock Product.find with chained methods
-      Product.find = jest.fn().mockReturnValue({
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockResolvedValue(mockProductsList)
-      });
+      mockCountDocuments(Product, 3);
+      mockFind(Product, mockProductsList);
 
       // Execute the controller
       await productController.getProducts(req, res);
@@ -338,8 +332,8 @@ describe('Product Controller', () => {
       // Mock request with product ID
       req = mockRequest({}, {}, { id: mockProduct._id.toString() });
 
-      // Mock Product.findById to return a product
-      Product.findById = jest.fn().mockResolvedValue(mockProduct);
+      // Mock Product.findById
+      mockFindById(Product, mockProduct);
 
       // Execute the controller
       await productController.getProductById(req, res);
@@ -353,8 +347,7 @@ describe('Product Controller', () => {
       // Mock request with non-existent product ID
       req = mockRequest({}, {}, { id: 'nonexistent-id' });
 
-      // Mock Product.findById to return null
-      Product.findById = jest.fn().mockResolvedValue(null);
+      mockFindById(Product, null);
 
       // Execute the controller
       await productController.getProductById(req, res);
