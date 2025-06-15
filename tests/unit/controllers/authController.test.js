@@ -1,9 +1,17 @@
 // Imports
+// Tests use helper mocks defined in tests/mocks/mockUtils
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authController = require('../../../controllers/authController');
 const User = require('../../../models/User');
+// Helper utilities to mock Mongoose methods
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 
 const { mockUser, mockUnapprovedUser } = require('../../mocks/userMock');
 const { makeSavedUser } = require('../../mocks/userFactory');

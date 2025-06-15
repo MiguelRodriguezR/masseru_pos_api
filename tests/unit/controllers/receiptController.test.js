@@ -1,8 +1,15 @@
 // Imports
+// Common Mongoose mocking helpers are used
 const mongoose = require('mongoose');
 const receiptController = require('../../../controllers/receiptController');
 const Receipt = require('../../../models/Receipt');
 const Sale = require('../../../models/Sale');
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 const generateReceipt = require('../../../utils/receiptGenerator');
 const { mockReceipt, mockReceiptWithPopulatedSale } = require('../../mocks/receiptMock');
 const { mockCashSale } = require('../../mocks/saleMock');
