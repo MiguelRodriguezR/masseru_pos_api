@@ -4,10 +4,10 @@ const posSessionController = require('../../../controllers/posSessionController'
 const PosSession = require('../../../models/PosSession');
 const { MESSAGES } = require('../../../config/messages');
 const Sale = require('../../../models/Sale');
-const { 
-  mockPosSession, 
-  mockClosedPosSession, 
-  mockPosSessionsList 
+const {
+  mockPosSession,
+  mockClosedPosSession,
+  mockPosSessionsList
 } = require('../../mocks/posSessionMock');
 const {
   mockCashSale,
@@ -15,6 +15,13 @@ const {
   mockMixedPaymentSale,
   mockCashSaleWithChange
 } = require('../../mocks/saleMock');
+// Tests rely on helper mocks from tests/mocks/mockUtils
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
 
 // Mock the mongoose models
 jest.mock('../../../models/PosSession');
@@ -30,7 +37,7 @@ describe('POS Session Controller', () => {
   };
 
   const setupMockFindById = (returnValue) => {
-    PosSession.findById = jest.fn().mockResolvedValue(returnValue);
+    mockFindById(PosSession, returnValue);
   };
   
   describe('openSession', () => {
@@ -39,9 +46,7 @@ describe('POS Session Controller', () => {
       setupMockFindOne(null);
       
       const savedSession = { ...mockPosSession };
-      PosSession.mockImplementation(() => ({
-        save: jest.fn().mockResolvedValue(savedSession)
-      }));
+      const mockSessionInstance = mockSave(PosSession, savedSession);
 
       req = mockRequest({ initialCash: 1000 });
       await posSessionController.openSession(req, res);
@@ -130,7 +135,7 @@ describe('POS Session Controller', () => {
       };
 
       // Mock session find
-      setupMockFindById(sessionWithSave);
+      mockFindById(PosSession, sessionWithSave);
 
       // Mock sales data with multiple payment types and scenarios
       const mockSales = [
@@ -140,9 +145,7 @@ describe('POS Session Controller', () => {
         mockCashSaleWithChange
       ];
 
-      Sale.find = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockSales)
-      });
+      mockFind(Sale, mockSales);
 
       // 2. Execute test with actualCash = 1190 (expected cash should be 1500)
       req = mockRequest({ 
@@ -381,13 +384,8 @@ describe('POS Session Controller', () => {
 
   describe('getSessions', () => {
     test('should get sessions with pagination and filters', async () => {
-      PosSession.countDocuments = jest.fn().mockResolvedValue(3);
-      PosSession.find = jest.fn().mockReturnValue({
-        populate: jest.fn().mockReturnThis(),
-        sort: jest.fn().mockReturnThis(),
-        skip: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockResolvedValue(mockPosSessionsList)
-      });
+      mockCountDocuments(PosSession, 3);
+      mockFind(PosSession, mockPosSessionsList);
 
       req = mockRequest({}, {}, {}, { 
         page: '1', 
@@ -464,9 +462,7 @@ describe('POS Session Controller', () => {
       };
 
       PosSession.findOne = jest.fn().mockResolvedValue(mockSession);
-      Sale.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(mockSale)
-      });
+      mockFindById(Sale, mockSale);
 
       const result = await posSessionController.addSaleToSession(
         mockSale._id.toString(), 
@@ -512,9 +508,7 @@ describe('POS Session Controller', () => {
 
     // Mock database calls
     PosSession.findOne = jest.fn().mockResolvedValue(mockSession);
-    Sale.findById = jest.fn().mockReturnValue({
-      populate: jest.fn().mockResolvedValue(mockSaleWithMultiplePayments)
-    });
+    mockFindById(Sale, mockSaleWithMultiplePayments);
 
     // 2. Execute test - con argumentos directos (saleId, userId)
     const result = await posSessionController.addSaleToSession(
@@ -557,9 +551,7 @@ describe('POS Session Controller', () => {
       
       // Mock session found but sale not found
       PosSession.findOne = jest.fn().mockResolvedValue(mockSession);
-      Sale.findById = jest.fn().mockReturnValue({
-        populate: jest.fn().mockResolvedValue(null)
-      });
+      mockFindById(Sale, null);
 
       // 2. Execute test - con argumentos directos (saleId, userId)
       const result = await posSessionController.addSaleToSession(
