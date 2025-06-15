@@ -7,6 +7,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   global.req = mockRequest();
   global.res = mockResponse();
+  jest.spyOn(console, 'error').mockImplementation(() => {});
 });
 
 afterEach(() => {
