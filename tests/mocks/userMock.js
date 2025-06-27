@@ -5,6 +5,12 @@ const mongoose = require('mongoose');
 const validUserId = new mongoose.Types.ObjectId();
 const validAdminId = new mongoose.Types.ObjectId();
 
+// Base user data used by factories
+const baseUser = {
+  name: 'Existing User',
+  email: 'existing@example.com'
+};
+
 // Mock data for regular user
 const mockUser = {
   _id: validUserId,
@@ -73,6 +79,7 @@ const mockUsersList = [
 ];
 
 module.exports = {
+  baseUser,
   mockUser,
   mockAdmin,
   mockUnapprovedUser,
