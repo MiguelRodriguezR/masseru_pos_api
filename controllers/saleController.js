@@ -460,3 +460,77 @@ exports.updateSale = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.deleteSale = async (req, res) => {
+  try {
+    const saleId = req.params.id;
+
+    // Validar que la venta exista
+    const existingSale = await Sale.findById(saleId)
+      .populate('items.product', 'quantity variants');
+
+    if(!existingSale) {
+      return res.status(404).json({ msg: 'Venta no encontrada' });
+    }
+
+    const existingSession = existingSale.saleSession;
+
+    // Revertir cantidades de productos al inventario
+    for(const item of existingSale.items) {
+      const product = await Product.findById(item.product._id);
+      if(product) {
+        // Revertir cantidad general
+        product.quantity += item.quantity;
+        
+        // Revertir cantidad de variante si existe
+        if(item.variant && product.variants && product.variants.length > 0) {
+          const variantIndex = product.variants.findIndex(v => {
+            let match = true;
+            for(let key in item.variant) {
+              if(v[key] !== item.variant[key]) match = false;
+            }
+            return match;
+          });
+          
+          if(variantIndex !== -1) {
+            product.variants[variantIndex].quantity += item.quantity;
+          }
+        }
+        await product.save();
+      }
+    }
+
+    // Remover la venta de la sesión POS si existe
+    if(existingSession) {
+      const session = await PosSession.findById(existingSession);
+      if(session) {
+        // Remover la venta del array de ventas
+        session.sales = session.sales.filter(saleRef => saleRef.toString() !== saleId);
+        await session.save();
+        
+        // Recalcular totales de la sesión con las ventas restantes
+        if(session.sales.length > 0) {
+          await updateSessionFromSale(existingSession, session.sales[0]);
+        } else {
+          // Si no hay más ventas, resetear totales a valores iniciales
+          session.paymentTotals = [];
+          session.totalSales = 0;
+          session.expectedCash = session.initialCash || 0;
+          session.expectedNonCash = 0;
+          await session.save();
+        }
+      }
+    }
+
+    // Eliminar la venta
+    await Sale.findByIdAndDelete(saleId);
+
+    res.json({
+      msg: 'Venta eliminada correctamente',
+      deletedSaleId: saleId
+    });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
