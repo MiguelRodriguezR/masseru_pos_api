@@ -1,10 +1,18 @@
 // Imports
+// Tests use helper mocks defined in tests/mocks/mockUtils
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const authController = require('../../../controllers/authController');
 const User = require('../../../models/User');
-const { mockRequest, mockResponse } = require('../../mocks/mockUtils');
+// Helper utilities to mock Mongoose methods
+const {
+  mockFind,
+  mockFindById,
+  mockCountDocuments,
+  mockSave
+} = require('../../mocks/mockUtils');
+
 const { mockUser, mockUnapprovedUser } = require('../../mocks/userMock');
 const { makeSavedUser } = require('../../mocks/userFactory');
 const { mockRegister } = require('../../utils/userControllerHelpers');
@@ -17,22 +25,15 @@ jest.mock('bcryptjs');
 jest.mock('jsonwebtoken');
 
 describe('Auth Controller', () => {
-  let req, res, userData;
+  let userData;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    res = mockResponse();
-    req = mockRequest();
     userData = {
         name: 'Existing User',
         email: 'existing@example.com',
         password: 'password123',
         role: 'user'
       };
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   describe('register', () => {
