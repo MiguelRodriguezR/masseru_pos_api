@@ -266,3 +266,85 @@ exports.addStock = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.exportInventoryToCSV = async (req, res) => {
+  try {
+    // Obtener todos los productos ordenados por cantidad
+    const products = await Product.find({}).sort({ quantity: 1 });
+
+    // Crear las cabeceras del CSV
+    const headers = [
+      'Código de Barras',
+      'Nombre',
+      'Descripción',
+      'Precio de Venta',
+      'Costo de Compra',
+      'Cantidad Total',
+      'Variantes',
+      'Imágenes',
+      'Fecha de Creación'
+    ];
+
+    // Función para escapar campos CSV (maneja comas y comillas)
+    const escapeCSVField = (field) => {
+      if (field === null || field === undefined) return '';
+      const stringField = String(field);
+      if (stringField.includes(',') || stringField.includes('"') || stringField.includes('\n')) {
+        return `"${stringField.replace(/"/g, '""')}"`;
+      }
+      return stringField;
+    };
+
+    // Construir las filas del CSV
+    const rows = products.map(product => {
+      // Formatear variantes
+      let variantsStr = '';
+      if (product.variants && product.variants.length > 0) {
+        variantsStr = product.variants.map(v => {
+          const variantDetails = [];
+          if (v.color) variantDetails.push(`Color: ${v.color}`);
+          if (v.size) variantDetails.push(`Talla: ${v.size}`);
+          if (v.quantity !== undefined) variantDetails.push(`Cantidad: ${v.quantity}`);
+          return variantDetails.join('; ');
+        }).join(' | ');
+      }
+
+      // Formatear imágenes
+      const imagesStr = product.images && product.images.length > 0
+        ? product.images.join('; ')
+        : 'Sin imágenes';
+
+      // Formatear fecha
+      const createdDate = product.createdAt
+        ? new Date(product.createdAt).toLocaleDateString('es-ES')
+        : '';
+
+      return [
+        escapeCSVField(product.barcode),
+        escapeCSVField(product.name),
+        escapeCSVField(product.description),
+        escapeCSVField(product.salePrice),
+        escapeCSVField(product.purchaseCost),
+        escapeCSVField(product.quantity),
+        escapeCSVField(variantsStr),
+        escapeCSVField(imagesStr),
+        escapeCSVField(createdDate)
+      ].join(',');
+    });
+
+    // Combinar cabeceras y filas
+    const csvContent = [headers.join(','), ...rows].join('\n');
+
+    // Configurar las cabeceras de respuesta para descarga
+    const filename = `inventario_${new Date().toISOString().split('T')[0]}.csv`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    // Agregar BOM para que Excel reconozca UTF-8 correctamente
+    res.write('\uFEFF');
+    res.write(csvContent);
+    res.end();
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
