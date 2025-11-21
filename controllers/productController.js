@@ -1,5 +1,6 @@
 // controllers/productController.js
 const Product = require('../models/Product');
+const Sale = require('../models/Sale');
 const fs = require('fs');
 const path = require('path');
 
@@ -198,9 +199,19 @@ exports.updateProduct = async (req, res) => {
 exports.deleteProduct = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id);
-    
+
     if (!product) return res.status(404).json({ msg: 'Producto no encontrado' });
-    
+
+    // Verificar si existen ventas asociadas a este producto
+    const salesWithProduct = await Sale.findOne({ 'items.product': req.params.id });
+
+    if (salesWithProduct) {
+      return res.status(400).json({
+        msg: 'No se puede eliminar el producto porque tiene ventas asociadas',
+        error: 'Este producto ya ha sido vendido y no puede ser eliminado para mantener la integridad de los registros de ventas.'
+      });
+    }
+
     // Eliminar las imágenes asociadas al producto
     if (product.images && product.images.length > 0) {
       product.images.forEach(imagePath => {
@@ -212,10 +223,10 @@ exports.deleteProduct = async (req, res) => {
         }
       });
     }
-    
+
     // Eliminar el producto de la base de datos
     await Product.findByIdAndDelete(req.params.id);
-    
+
     res.json({ msg: 'Producto eliminado' });
   } catch (error) {
     res.status(500).json({ error: error.message });
