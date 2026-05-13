@@ -63,10 +63,21 @@ async function getProductStatsData({ startDate, endDate }) {
     }
   }));
   const statsArray = Object.values(statsMap);
+  const idealInventoryValue = statsArray.reduce((sum, p) => {
+    // Ideal = current stock + units sold but not yet replenished
+    // If totalQuantity > quantity, it means we've sold more than we have,
+    // so ideal should cover current stock + the deficit
+    const deficit = Math.max(0, p.totalQuantity - p.quantity);
+    const idealQty = p.quantity + deficit;
+    return sum + p.purchaseCost * idealQty;
+  }, 0);
+  const outOfStockCount = products.filter(p => p.quantity === 0).length;
   return {
     topSellingProducts: statsArray.slice().sort((a, b) => b.totalQuantity - a.totalQuantity).slice(0,10),
     lowStockProducts: statsArray.filter(p => p.quantity < 10).sort((a, b) => a.quantity - b.quantity),
     inventoryValue,
+    idealInventoryValue,
+    outOfStockCount,
     totalProducts: products.length
   };
 }

@@ -22,18 +22,24 @@ exports.getUserById = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const { name, email, role, approved } = req.body;
+    const { name, email, role, approved, settings } = req.body;
     const updateData = { name, email, role };
-    
+
     // Only include approved in the update if it's explicitly provided
     if (approved !== undefined) {
       updateData.approved = approved;
     }
-    
+
+    if (settings !== undefined) {
+      if (settings.friPercentage !== undefined) {
+        updateData['settings.friPercentage'] = settings.friPercentage;
+      }
+    }
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      updateData,
-      { new: true }
+      { $set: updateData },
+      { new: true, runValidators: true }
     );
     
     if(!updatedUser) return res.status(404).json({ msg: 'Usuario no encontrado' });
